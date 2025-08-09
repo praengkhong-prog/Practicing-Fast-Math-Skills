@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { generateProblem, Mode, Level, saveResult } from "@/lib/math";
 import { toast } from "@/hooks/use-toast";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 const Practice = () => {
   const [params] = useSearchParams();
@@ -13,9 +15,10 @@ const Practice = () => {
 
   const [index, setIndex] = useState(0);
   const [score, setScore] = useState(0);
-  const [times, setTimes] = useState<number[]>([]);
-  const [answered, setAnswered] = useState<number | null>(null);
-  const startRef = useRef<number>(performance.now());
+const [times, setTimes] = useState<number[]>([]);
+const [answered, setAnswered] = useState<number | null>(null);
+const [showTipBefore, setShowTipBefore] = useState(true);
+const startRef = useRef<number>(performance.now());
 
   const problem = useMemo(() => generateProblem(mode, level), [index, mode, level]);
 
@@ -63,7 +66,13 @@ const Practice = () => {
           <h1 className="text-2xl font-bold">ฝึกโหมด: {mode.toUpperCase()} • ระดับ: {level}</h1>
           <p className="text-sm text-muted-foreground">ข้อที่ {Math.min(index + 1, total)}/{total} • คะแนน {score}</p>
         </div>
-        <div className="text-sm text-muted-foreground">เวลาเฉลี่ย {avgMs} ms</div>
+        <div className="flex items-center gap-4">
+          <div className="text-sm text-muted-foreground">เวลาเฉลี่ย {avgMs} ms</div>
+          <div className="flex items-center gap-2">
+            <Switch id="show-tip" checked={showTipBefore} onCheckedChange={setShowTipBefore} />
+            <Label htmlFor="show-tip" className="text-sm text-muted-foreground">แสดงเทคนิคก่อนทำ</Label>
+          </div>
+        </div>
       </div>
 
       {index < total ? (
@@ -89,7 +98,9 @@ const Practice = () => {
             })}
           </CardContent>
           <CardFooter className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-muted-foreground">เทคนิค: {problem.tip}</p>
+            {showTipBefore && (
+              <p className="text-sm text-muted-foreground">เทคนิค: {problem.tip}</p>
+            )}
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => window.location.reload()}>สุ่มข้อใหม่</Button>
               <Button onClick={next}>{index + 1 >= total ? "สรุปผล" : "ถัดไป"}</Button>
