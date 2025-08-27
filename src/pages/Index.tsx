@@ -16,7 +16,7 @@ const Index = () => {
             เลือกโหมด บวก ลบ คูณ หาร หรือโหมดผสม จับเวลาให้คะแนน มีสถิติส่วนตัวและเทคนิคเฉลย
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">
-            <Link to="/practice"><Button variant="hero" size="xl">เริ่มฝึกทันที</Button></Link>
+            <Link to="/mode-selection"><Button variant="hero" size="xl">เริ่มฝึก</Button></Link>
             <Link to="/stats"><Button variant="premium" size="xl">ดูสถิติ</Button></Link>
           </div>
           <img src="/og-image.jpg" alt="ฝึกคิดเลขเร็ว Brainy Math Boost" className="mx-auto w-full max-w-4xl rounded-lg border shadow-[var(--shadow-elevated)]" loading="lazy" />

@@ -12,12 +12,13 @@ const Practice = () => {
   const [params] = useSearchParams();
   const mode = (params.get("mode") as Mode) || "mix";
   const level = (params.get("level") as Level) || "easy";
+  const showTipsParam = params.get("showTips") === "true";
 
   const [index, setIndex] = useState(0);
   const [score, setScore] = useState(0);
 const [times, setTimes] = useState<number[]>([]);
 const [answered, setAnswered] = useState<number | null>(null);
-const [showTipBefore, setShowTipBefore] = useState(true);
+const [showTipBefore, setShowTipBefore] = useState(showTipsParam);
 const startRef = useRef<number>(performance.now());
 
   const problem = useMemo(() => generateProblem(mode, level), [index, mode, level]);
