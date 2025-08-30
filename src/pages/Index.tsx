@@ -2,8 +2,11 @@ import SEO from "@/components/SEO";
 import ModeCard from "@/components/ModeCard";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
+  const { user } = useAuth();
+
   return (
     <main>
       <SEO title="Brainy Math Boost — ฝึกคิดเลขเร็วออนไลน์" description="ฝึกคิดเลขเร็วหลายโหมด พร้อมจับเวลา สถิติ และเทคนิคเฉลย" canonical="/" />
@@ -17,7 +20,11 @@ const Index = () => {
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">
             <Link to="/mode-selection"><Button variant="hero" size="xl">เริ่มฝึก</Button></Link>
-            <Link to="/stats"><Button variant="premium" size="xl">ดูสถิติ</Button></Link>
+            {user ? (
+              <Link to="/stats"><Button variant="premium" size="xl">ดูสถิติ</Button></Link>
+            ) : (
+              <Link to="/auth"><Button variant="premium" size="xl">เข้าสู่ระบบ</Button></Link>
+            )}
           </div>
           <img src="/og-image.jpg" alt="ฝึกคิดเลขเร็ว Brainy Math Boost" className="mx-auto w-full max-w-4xl rounded-lg border shadow-[var(--shadow-elevated)]" loading="lazy" />
         </div>
