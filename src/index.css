@@ -8,91 +8,114 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Background gradient for mathematical theme */
+    --background: 220 25% 98%;
+    --foreground: 215 20% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 215 20% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 215 20% 15%;
 
-    /* Brand & Primary tokens */
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-    --brand: 265 83% 58%; /* Vibrant purple */
-    --brand-2: 210 92% 56%; /* Electric blue */
+    /* Math-themed brand colors */
+    --primary: 210 100% 50%;
+    --primary-foreground: 0 0% 100%;
+    --brand: 250 80% 60%; /* Mathematical purple */
+    --brand-2: 190 85% 55%; /* Smart teal */
+    --brand-accent: 35 100% 65%; /* Energy orange */
+    --brand-success: 145 65% 50%; /* Achievement green */
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Enhanced secondary colors */
+    --secondary: 210 25% 95%;
+    --secondary-foreground: 210 15% 25%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 210 20% 96%;
+    --muted-foreground: 215 15% 50%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 210 30% 94%;
+    --accent-foreground: 210 20% 20%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 75% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 214 20% 88%;
+    --input: 214 25% 92%;
+    --ring: 250 80% 60%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
-    /* Sidebar */
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Math learning theme gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--brand)) 0%, hsl(var(--brand-2)) 100%);
+    --gradient-accent: linear-gradient(120deg, hsl(var(--brand-accent)) 0%, hsl(var(--brand)) 100%);
+    --gradient-success: linear-gradient(135deg, hsl(var(--brand-success)) 0%, hsl(var(--brand-2)) 100%);
+    --gradient-background: linear-gradient(180deg, hsl(var(--background)) 0%, hsl(210 30% 96%) 100%);
 
-    /* Shadows & Motion */
-    --shadow-elevated: 0 12px 32px -12px hsl(var(--brand) / 0.35);
-    --shadow-glow: 0 0 40px hsl(var(--brand) / 0.45);
-    --transition-smooth: all 220ms cubic-bezier(0.22, 1, 0.36, 1);
+    /* Enhanced shadows for depth */
+    --shadow-elevated: 0 16px 40px -12px hsl(var(--brand) / 0.25);
+    --shadow-glow: 0 0 50px hsl(var(--brand) / 0.3);
+    --shadow-success: 0 8px 25px -8px hsl(var(--brand-success) / 0.4);
+    --shadow-card: 0 4px 20px -4px hsl(215 25% 25% / 0.1);
+
+    /* Sidebar with math theme */
+    --sidebar-background: 215 25% 97%;
+    --sidebar-foreground: 215 20% 30%;
+    --sidebar-primary: 250 80% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 25% 94%;
+    --sidebar-accent-foreground: 215 20% 25%;
+    --sidebar-border: 214 20% 88%;
+    --sidebar-ring: 250 80% 60%;
+
+    /* Enhanced transitions */
+    --transition-smooth: all 280ms cubic-bezier(0.23, 1, 0.32, 1);
+    --transition-bounce: all 350ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    /* Dark theme for math learning */
+    --background: 215 30% 8%;
+    --foreground: 210 25% 95%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 215 25% 10%;
+    --card-foreground: 210 25% 95%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 215 25% 10%;
+    --popover-foreground: 210 25% 95%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 210 100% 65%;
+    --primary-foreground: 215 30% 8%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 215 20% 15%;
+    --secondary-foreground: 210 25% 85%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 215 20% 15%;
+    --muted-foreground: 215 15% 60%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 215 25% 18%;
+    --accent-foreground: 210 25% 90%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 70% 65%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --border: 215 20% 20%;
+    --input: 215 20% 18%;
+    --ring: 250 80% 70%;
+
+    /* Dark theme gradients */
+    --gradient-background: linear-gradient(180deg, hsl(var(--background)) 0%, hsl(215 25% 12%) 100%);
+    --shadow-elevated: 0 16px 40px -12px hsl(0 0% 0% / 0.4);
+    --shadow-glow: 0 0 50px hsl(var(--brand) / 0.5);
+    --shadow-card: 0 4px 20px -4px hsl(0 0% 0% / 0.3);
+
+    --sidebar-background: 215 25% 10%;
+    --sidebar-foreground: 210 25% 85%;
+    --sidebar-primary: 250 80% 70%;
+    --sidebar-primary-foreground: 215 30% 8%;
+    --sidebar-accent: 215 20% 15%;
+    --sidebar-accent-foreground: 210 25% 85%;
+    --sidebar-border: 215 20% 20%;
+    --sidebar-ring: 250 80% 70%;
   }
 }
 
@@ -102,6 +125,32 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-medium;
+    background: var(--gradient-background);
+    min-height: 100vh;
+  }
+
+  /* Math learning visual enhancements */
+  .math-card {
+    @apply rounded-xl border bg-card shadow-[var(--shadow-card)] transition-all duration-300;
+    @apply hover:shadow-[var(--shadow-elevated)] hover:scale-[1.02];
+  }
+
+  .math-button {
+    @apply relative overflow-hidden transition-[var(--transition-smooth)];
+    @apply hover:scale-[1.05] active:scale-95;
+  }
+
+  .math-gradient {
+    background: var(--gradient-primary);
+  }
+
+  .math-glow {
+    box-shadow: var(--shadow-glow);
+  }
+
+  .number-display {
+    @apply font-mono text-2xl font-bold tracking-wider;
+    text-shadow: 0 2px 4px hsl(var(--foreground) / 0.1);
   }
 }
