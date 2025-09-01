@@ -30,16 +30,6 @@ const Index = () => {
         </div>
       </section>
 
-      <section className="container mx-auto px-4 pb-16">
-        <h2 className="mb-6 text-xl font-semibold">เลือกโหมดการฝึก</h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <ModeCard mode="add" title="บวก" description="ฝึกบวกเลขเร็วด้วยเทคนิคจับคู่ครบสิบ" />
-          <ModeCard mode="sub" title="ลบ" description="ฝึกลบเลขอย่างเป็นระบบ ลดการยืมซ้ำซ้อน" />
-          <ModeCard mode="mul" title="คูณ" description="ฝึกคูณไวด้วยการแยกตัวประกอบและสูตรลัด" />
-          <ModeCard mode="div" title="หาร" description="ฝึกหารให้คล่องด้วยวิธีหารลงตัวใกล้เคียง" />
-          <ModeCard mode="mix" title="ผสม" description="ฝึกแบบรวมทุกทักษะ เพิ่มความท้าทาย" />
-        </div>
-      </section>
     </main>
   );
 };
