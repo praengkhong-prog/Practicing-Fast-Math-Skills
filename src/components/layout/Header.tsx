@@ -56,6 +56,9 @@ const Header = () => {
                 </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
+                  <Link to="/profile">โปรไฟล์</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
                   <Link to="/stats">สถิติของฉัน</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>

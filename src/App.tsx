@@ -14,6 +14,7 @@ import Survey from "./pages/Survey";
 import Admin from "./pages/Admin";
 import Auth from "./pages/Auth";
 import Header from "./components/layout/Header";
+import { Profile } from "./pages/Profile";
 
 const queryClient = new QueryClient();
 
@@ -55,6 +56,11 @@ const App = () => (
             <Route path="/admin" element={
               <ProtectedRoute requireAdmin>
                 <Admin />
+              </ProtectedRoute>
+            } />
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <Profile />
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

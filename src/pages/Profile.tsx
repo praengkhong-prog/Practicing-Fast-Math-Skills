@@ -1,0 +1,232 @@
+import React, { useState, useEffect } from 'react';
+import { User, Mail, Calendar, Settings } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { ProfileUpload } from '@/components/ProfileUpload';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+
+interface Profile {
+  id: string;
+  user_id: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export const Profile: React.FC = () => {
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [displayName, setDisplayName] = useState('');
+  const [bio, setBio] = useState('');
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (user) {
+      fetchProfile();
+    }
+  }, [user]);
+
+  const fetchProfile = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+
+      if (data) {
+        setProfile(data as Profile);
+        setDisplayName(data.display_name || '');
+        setBio((data as any).bio || '');
+      }
+    } catch (error: any) {
+      console.error('Error fetching profile:', error);
+      toast({
+        title: "ข้อผิดพลาด",
+        description: "ไม่สามารถโหลดข้อมูลโปรไฟล์ได้",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveProfile = async () => {
+    if (!user) return;
+
+    setSaving(true);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .upsert({
+          user_id: user.id,
+          display_name: displayName || null,
+          bio: bio || null,
+          avatar_url: profile?.avatar_url
+        }, {
+          onConflict: 'user_id'
+        })
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      setProfile(data as Profile);
+      toast({
+        title: "สำเร็จ",
+        description: "บันทึกข้อมูลโปรไฟล์เรียบร้อยแล้ว"
+      });
+
+    } catch (error: any) {
+      console.error('Error saving profile:', error);
+      toast({
+        title: "ข้อผิดพลาด",
+        description: error.message || "ไม่สามารถบันทึกข้อมูลได้",
+        variant: "destructive"
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleAvatarUpdate = (newAvatarUrl: string) => {
+    setProfile(prev => prev ? { ...prev, avatar_url: newAvatarUrl } : null);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-subtle flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-subtle py-8">
+      <div className="container mx-auto px-4 max-w-2xl">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+            โปรไฟล์ของฉัน
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            จัดการข้อมูลส่วนตัวและการตั้งค่าบัญชี
+          </p>
+        </div>
+
+        <Card className="backdrop-blur-sm bg-background/95 border-primary/20 shadow-elegant">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="w-5 h-5 text-primary" />
+              ข้อมูลโปรไฟล์
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Avatar Upload */}
+            <div className="flex flex-col items-center space-y-4">
+              <ProfileUpload
+                currentAvatarUrl={profile?.avatar_url || undefined}
+                onAvatarUpdate={handleAvatarUpdate}
+                size="lg"
+              />
+            </div>
+
+            {/* Email (Read-only) */}
+            <div className="space-y-2">
+              <Label htmlFor="email" className="flex items-center gap-2">
+                <Mail className="w-4 h-4" />
+                อีเมล
+              </Label>
+              <Input
+                id="email"
+                value={user?.email || ''}
+                disabled
+                className="bg-muted"
+              />
+              <p className="text-sm text-muted-foreground">
+                ไม่สามารถเปลี่ยนแปลงอีเมลได้
+              </p>
+            </div>
+
+            {/* Display Name */}
+            <div className="space-y-2">
+              <Label htmlFor="displayName" className="flex items-center gap-2">
+                <User className="w-4 h-4" />
+                ชื่อที่แสดง
+              </Label>
+              <Input
+                id="displayName"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="ระบุชื่อที่ต้องการแสดง"
+              />
+            </div>
+
+            {/* Bio */}
+            <div className="space-y-2">
+              <Label htmlFor="bio">เกี่ยวกับตัวเอง</Label>
+              <Textarea
+                id="bio"
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                placeholder="เขียนอะไรบางอย่างเกี่ยวกับตัวเอง..."
+                rows={4}
+              />
+            </div>
+
+            {/* Created Date */}
+            {profile?.created_at && (
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4" />
+                  วันที่สมัครสมาชิก
+                </Label>
+                <Input
+                  value={new Date(profile.created_at).toLocaleDateString('th-TH', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                  disabled
+                  className="bg-muted"
+                />
+              </div>
+            )}
+
+            {/* Save Button */}
+            <Button
+              onClick={saveProfile}
+              disabled={saving}
+              className="w-full gap-2"
+            >
+              {saving ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  กำลังบันทึก...
+                </>
+              ) : (
+                'บันทึกข้อมูล'
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
