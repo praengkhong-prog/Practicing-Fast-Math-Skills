@@ -7,6 +7,9 @@ import { generateProblem, Mode, Level, saveResult } from "@/lib/math";
 import { toast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { PracticeService } from "@/services/PracticeService";
+import { routes } from "@/routes/web";
+import { config } from "@/config/app";
 
 const Practice = () => {
   const [params] = useSearchParams();
@@ -118,8 +121,8 @@ const startRef = useRef<number>(performance.now());
             <div>เวลาเฉลี่ยต่อข้อ: {avgMs} ms</div>
           </CardContent>
           <CardFooter className="flex gap-2">
-            <Link to="/stats"><Button variant="hero">ดูสถิติ</Button></Link>
-            <Link to="/"><Button variant="secondary">เลือกโหมดใหม่</Button></Link>
+            <Link to={routes.stats}><Button variant="hero">ดูสถิติ</Button></Link>
+            <Link to={routes.home}><Button variant="secondary">เลือกโหมดใหม่</Button></Link>
           </CardFooter>
         </Card>
       )}

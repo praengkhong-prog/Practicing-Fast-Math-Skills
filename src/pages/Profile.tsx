@@ -7,8 +7,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ProfileUpload } from '@/components/ProfileUpload';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { ProfileController } from '@/controllers/ProfileController';
+import { Profile as ProfileModel } from '@/models/User';
+import { config } from '@/config/app';
+import SEO from '@/components/SEO';
 
 interface Profile {
   id: string;
@@ -38,72 +41,51 @@ export const Profile: React.FC = () => {
   const fetchProfile = async () => {
     if (!user) return;
     
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (error && error.code !== 'PGRST116') {
-        throw error;
-      }
-
-      if (data) {
-        setProfile(data as Profile);
-        setDisplayName(data.display_name || '');
-        setBio((data as any).bio || '');
-      }
-    } catch (error: any) {
-      console.error('Error fetching profile:', error);
+    const result = await ProfileController.getProfile(user.id);
+    
+    if (result.success && result.data) {
+      setProfile(result.data as Profile);
+      setDisplayName(result.data.display_name || '');
+      setBio((result.data as any).bio || '');
+    } else if (result.error) {
       toast({
         title: "ข้อผิดพลาด",
         description: "ไม่สามารถโหลดข้อมูลโปรไฟล์ได้",
         variant: "destructive"
       });
-    } finally {
-      setLoading(false);
     }
+    
+    setLoading(false);
   };
 
   const saveProfile = async () => {
     if (!user) return;
 
     setSaving(true);
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .upsert({
-          user_id: user.id,
-          display_name: displayName || null,
-          bio: bio || null,
-          avatar_url: profile?.avatar_url
-        }, {
-          onConflict: 'user_id'
-        })
-        .select()
-        .single();
-
-      if (error) {
-        throw error;
-      }
-
-      setProfile(data as Profile);
+    
+    const updates = {
+      display_name: displayName || null,
+      bio: bio || null,
+      avatar_url: profile?.avatar_url
+    };
+    
+    const result = await ProfileController.updateProfile(user.id, updates);
+    
+    if (result.success) {
+      setProfile(result.data as Profile);
       toast({
         title: "สำเร็จ",
         description: "บันทึกข้อมูลโปรไฟล์เรียบร้อยแล้ว"
       });
-
-    } catch (error: any) {
-      console.error('Error saving profile:', error);
+    } else {
       toast({
         title: "ข้อผิดพลาด",
-        description: error.message || "ไม่สามารถบันทึกข้อมูลได้",
+        description: result.error || "ไม่สามารถบันทึกข้อมูลได้",
         variant: "destructive"
       });
-    } finally {
-      setSaving(false);
     }
+    
+    setSaving(false);
   };
 
   const handleAvatarUpdate = (newAvatarUrl: string) => {
@@ -120,6 +102,11 @@ export const Profile: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-subtle py-8">
+      <SEO 
+        title="โปรไฟล์ | Brainy Math Boost" 
+        description="จัดการข้อมูลส่วนตัวและการตั้งค่าบัญชีของคุณ"
+        canonical="/profile"
+      />
       <div className="container mx-auto px-4 max-w-2xl">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">

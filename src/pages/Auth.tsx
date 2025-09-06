@@ -9,6 +9,9 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import SEO from '@/components/SEO';
+import { AuthService } from '@/services/AuthService';
+import { routes } from '@/routes/web';
+import { config } from '@/config/app';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -34,14 +37,12 @@ const Auth = () => {
     setIsLoading(true);
     setError('');
 
-    const { error } = await signIn(email, password);
+    const result = await AuthService.handleLogin(email, password);
     
-    if (error) {
-      setError(
-        error.message === 'Invalid login credentials'
-          ? 'อีเมลหรือรหัสผ่านไม่ถูกต้อง'
-          : 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ กรุณาลองใหม่'
-      );
+    if (result.success) {
+      navigate(routes.home);
+    } else {
+      setError(result.error);
       setIsLoading(false);
     }
   };
@@ -51,21 +52,17 @@ const Auth = () => {
     setIsLoading(true);
     setError('');
 
-    const { error } = await signUp(email, password, displayName);
+    const result = await AuthService.handleRegister(email, password, displayName);
     
-    if (error) {
-      if (error.message?.includes('already registered')) {
-        setError('อีเมลนี้ถูกใช้งานแล้ว กรุณาใช้อีเมลอื่น');
-      } else {
-        setError('เกิดข้อผิดพลาดในการสมัครสมาชิก กรุณาลองใหม่');
-      }
-      setIsLoading(false);
-    } else {
+    if (result.success) {
       toast({
         title: "สมัครสมาชิกสำเร็จ",
         description: "กรุณาตรวจสอบอีเมลเพื่อยืนยันบัญชี",
       });
       setActiveTab('signin');
+      setIsLoading(false);
+    } else {
+      setError(result.error);
       setIsLoading(false);
     }
   };
