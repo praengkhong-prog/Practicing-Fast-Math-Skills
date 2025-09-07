@@ -59,22 +59,45 @@ const startRef = useRef<number>(performance.now());
   const avgSeconds = times.length ? (times.reduce((a, b) => a + b, 0) / times.length / 1000).toFixed(1) : "0.0";
 
   return (
-    <main className="container mx-auto px-4 py-10">
+    <main className="container mx-auto px-4 py-10 min-h-screen bg-gradient-to-br from-background via-background to-accent/20">
       <SEO
         title={`ฝึกคิดเลขเร็ว (${mode.toUpperCase()}) — Brainy Math Boost`}
         description="โหมดฝึกคิดเลขเร็ว จับเวลาให้คะแนน พร้อมเทคนิคเฉลย"
         canonical="/practice"
       />
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">ฝึกโหมด: {mode.toUpperCase()} • ระดับ: {level}</h1>
-          <p className="text-sm text-muted-foreground">ข้อที่ {Math.min(index + 1, total)}/{total} • คะแนน {score}</p>
+      
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-5">
+        <div className="absolute top-20 left-10 text-6xl font-mono text-brand rotate-12 animate-bounce-gentle">🧮</div>
+        <div className="absolute top-32 right-20 text-4xl font-mono text-brand-2 -rotate-12 animate-pulse-math">⚡</div>
+        <div className="absolute bottom-40 left-20 text-5xl font-mono text-brand-accent rotate-45 animate-bounce-gentle">🎯</div>
+      </div>
+      
+      <div className="mb-8 flex items-center justify-between animate-fade-in relative z-10">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold math-gradient bg-clip-text text-transparent">
+            ฝึกโหมด: {mode.toUpperCase()} • ระดับ: {level}
+          </h1>
+          <div className="flex items-center gap-4">
+            <p className="text-lg text-muted-foreground">
+              <span className="font-bold text-brand">ข้อที่ {Math.min(index + 1, total)}</span>
+              <span className="mx-2">/</span>
+              <span>{total}</span>
+            </p>
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">🏆</span>
+              <span className="text-xl font-bold text-brand-success">{score}</span>
+            </div>
+          </div>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="text-sm text-brand-2 font-medium">⏱️ เวลาเฉลี่ย {avgSeconds} วินาที</div>
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-6">
+          <div className="text-center p-4 rounded-xl bg-gradient-to-br from-card via-card to-accent/10 border border-brand-2/20">
+            <div className="text-brand-2 font-bold text-lg">⏱️ {avgSeconds} วินาที</div>
+            <div className="text-xs text-muted-foreground">เวลาเฉลี่ย</div>
+          </div>
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-br from-card via-card to-accent/10 border border-brand/10">
             <Switch id="show-tip" checked={showTipBefore} onCheckedChange={setShowTipBefore} />
-            <Label htmlFor="show-tip" className="text-sm text-muted-foreground">แสดงเทคนิคก่อนทำ</Label>
+            <Label htmlFor="show-tip" className="text-sm font-medium cursor-pointer">💡 เทคนิค</Label>
           </div>
         </div>
       </div>
@@ -103,13 +126,27 @@ const startRef = useRef<number>(performance.now());
               );
             })}
           </CardContent>
-          <CardFooter className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <CardFooter className="flex flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between p-6 bg-gradient-subtle rounded-b-lg">
             {showTipBefore && (
-              <p className="text-sm text-muted-foreground">เทคนิค: {problem.tip}</p>
+              <div className="flex-1 p-4 rounded-xl bg-gradient-to-br from-card via-card to-accent/10 border border-brand-accent/20">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xl">💡</span>
+                  <span className="font-bold text-brand-accent">เทคนิค:</span>
+                </div>
+                <p className="text-sm text-muted-foreground leading-relaxed">{problem.tip}</p>
+              </div>
             )}
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => window.location.reload()}>สุ่มข้อใหม่</Button>
-              <Button onClick={next}>{index + 1 >= total ? "สรุปผล" : "ถัดไป"}</Button>
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={() => window.location.reload()} className="hover:scale-105 transition-transform">
+                🔄 สุ่มข้อใหม่
+              </Button>
+              <Button onClick={next} className="hover:scale-105 transition-transform group">
+                {index + 1 >= total ? (
+                  <>🏁 สรุปผล</>
+                ) : (
+                  <>ถัดไป <span className="ml-1 group-hover:animate-bounce-gentle">→</span></>
+                )}
+              </Button>
             </div>
           </CardFooter>
         </Card>
@@ -127,9 +164,19 @@ const startRef = useRef<number>(performance.now());
               เปอร์เซ็นต์: {Math.round((score / total) * 100)}%
             </div>
           </CardContent>
-          <CardFooter className="flex gap-2">
-            <Link to={routes.stats}><Button variant="hero">ดูสถิติ</Button></Link>
-            <Link to={routes.home}><Button variant="secondary">เลือกโหมดใหม่</Button></Link>
+          <CardFooter className="flex gap-4 justify-center p-6">
+            <Link to={routes.stats}>
+              <Button variant="hero" className="hover:scale-105 transition-transform group">
+                <span className="mr-2 text-xl group-hover:animate-pulse-math">📊</span>
+                ดูสถิติ
+              </Button>
+            </Link>
+            <Link to={routes.home}>
+              <Button variant="secondary" className="hover:scale-105 transition-transform group">
+                <span className="mr-2 text-xl group-hover:animate-bounce-gentle">🏠</span>
+                เลือกโหมดใหม่
+              </Button>
+            </Link>
           </CardFooter>
         </Card>
       )}
