@@ -56,7 +56,7 @@ const startRef = useRef<number>(performance.now());
     setIndex((i) => i + 1);
   };
 
-  const avgMs = times.length ? Math.round(times.reduce((a, b) => a + b, 0) / times.length) : 0;
+  const avgSeconds = times.length ? (times.reduce((a, b) => a + b, 0) / times.length / 1000).toFixed(1) : "0.0";
 
   return (
     <main className="container mx-auto px-4 py-10">
@@ -71,7 +71,7 @@ const startRef = useRef<number>(performance.now());
           <p className="text-sm text-muted-foreground">ข้อที่ {Math.min(index + 1, total)}/{total} • คะแนน {score}</p>
         </div>
         <div className="flex items-center gap-4">
-          <div className="text-sm text-muted-foreground">เวลาเฉลี่ย {avgMs} ms</div>
+          <div className="text-sm text-brand-2 font-medium">⏱️ เวลาเฉลี่ย {avgSeconds} วินาที</div>
           <div className="flex items-center gap-2">
             <Switch id="show-tip" checked={showTipBefore} onCheckedChange={setShowTipBefore} />
             <Label htmlFor="show-tip" className="text-sm text-muted-foreground">แสดงเทคนิคก่อนทำ</Label>
@@ -80,11 +80,13 @@ const startRef = useRef<number>(performance.now());
       </div>
 
       {index < total ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-xl">{problem.question}</CardTitle>
+        <Card className="math-card shadow-math-elevated hover:shadow-math-glow transition-all duration-300">
+          <CardHeader className="bg-gradient-subtle rounded-t-lg">
+            <CardTitle className="text-2xl font-bold text-center math-gradient bg-clip-text text-transparent">
+              {problem.question}
+            </CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-3 sm:grid-cols-2">
+          <CardContent className="grid gap-4 p-6 sm:grid-cols-2">
             {problem.options.map((opt) => {
               const isSel = answered === opt;
               const isCorrect = opt === problem.correct;
@@ -93,7 +95,7 @@ const startRef = useRef<number>(performance.now());
                 <Button
                   key={opt}
                   variant={variant as any}
-                  className="h-12"
+                  className="h-16 text-xl font-bold hover:scale-105 transition-transform number-display"
                   onClick={() => onAnswer(opt)}
                 >
                   {opt}
@@ -112,13 +114,18 @@ const startRef = useRef<number>(performance.now());
           </CardFooter>
         </Card>
       ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>สรุปผลการฝึก</CardTitle>
+        <Card className="math-card shadow-math-glow">
+          <CardHeader className="bg-gradient-primary text-center rounded-t-lg">
+            <CardTitle className="text-2xl font-bold text-white">🎉 สรุปผลการฝึก</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-2">
-            <div>คะแนนรวม: {score} / {total}</div>
-            <div>เวลาเฉลี่ยต่อข้อ: {avgMs} ms</div>
+          <CardContent className="grid gap-4 p-6 text-center">
+            <div className="text-3xl font-bold math-gradient bg-clip-text text-transparent">
+              คะแนนรวม: {score} / {total}
+            </div>
+            <div className="text-xl text-brand-2 font-medium">⏱️ เวลาเฉลี่ยต่อข้อ: {avgSeconds} วินาที</div>
+            <div className="text-lg text-muted-foreground">
+              เปอร์เซ็นต์: {Math.round((score / total) * 100)}%
+            </div>
           </CardContent>
           <CardFooter className="flex gap-2">
             <Link to={routes.stats}><Button variant="hero">ดูสถิติ</Button></Link>
