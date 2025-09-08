@@ -1,7 +1,7 @@
 // Application configuration (Laravel-like config)
 export const config = {
   app: {
-    name: 'Brainy Math Boost',
+    name: 'Practicing Fast Math Skills',
     version: '1.0.0',
     description: 'แอปฝึกคิดเลขเร็วและพัฒนาทักษะคณิตศาสตร์',
     url: process.env.NODE_ENV === 'production' ? 'https://your-domain.com' : 'http://localhost:5173'
@@ -32,7 +32,7 @@ export const config = {
   },
   
   seo: {
-    defaultTitle: 'Brainy Math Boost - ฝึกคิดเลขเร็ว',
+    defaultTitle: 'Practicing Fast Math Skills - ฝึกคิดเลขเร็ว',
     defaultDescription: 'พัฒนาทักษะคณิตศาสตร์และฝึกคิดเลขเร็วอย่างสนุกสนาน',
     keywords: 'คณิตศาสตร์, ฝึกคิดเลข, เลขเร็ว, การบวก, การลบ, การคูณ, การหาร'
   }

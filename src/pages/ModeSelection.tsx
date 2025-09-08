@@ -39,7 +39,7 @@ const ModeSelection = () => {
   return (
     <main className="container mx-auto px-4 py-10 min-h-screen bg-gradient-to-br from-background via-background to-accent/20">
       <SEO
-        title="เลือกโหมดฝึก — Brainy Math Boost"
+        title="เลือกโหมดฝึก — Practicing Fast Math Skills"
         description="เลือกโหมดและระดับการฝึกคิดเลขเร็วที่เหมาะกับคุณ"
         canonical="/mode-selection"
       />

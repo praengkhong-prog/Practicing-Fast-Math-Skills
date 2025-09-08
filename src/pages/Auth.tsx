@@ -70,7 +70,7 @@ const Auth = () => {
   return (
     <main className="min-h-screen flex items-center justify-center bg-background px-4 py-8">
       <SEO 
-        title="เข้าสู่ระบบ | Brainy Math Boost" 
+        title="เข้าสู่ระบบ | Practicing Fast Math Skills" 
         description="เข้าสู่ระบบหรือสมัครสมาชิกเพื่อเริ่มฝึกคิดเลขเร็วและติดตามผลการฝึก"
         canonical="/auth"
       />
@@ -79,7 +79,7 @@ const Auth = () => {
         <div className="text-center space-y-2">
           <Link to="/" className="inline-block">
             <h1 className="text-2xl font-bold bg-gradient-to-tr from-[hsl(var(--brand))] to-[hsl(var(--brand-2))] bg-clip-text text-transparent">
-              Brainy Math Boost
+              Practicing Fast Math Skills
             </h1>
           </Link>
           <p className="text-muted-foreground">ฝึกคิดเลขเร็วอย่างสนุกและมีเป้าหมาย</p>

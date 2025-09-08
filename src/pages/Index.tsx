@@ -9,7 +9,7 @@ const Index = () => {
 
   return (
     <main>
-      <SEO title="Brainy Math Boost — ฝึกคิดเลขเร็วออนไลน์" description="ฝึกคิดเลขเร็วหลายโหมด พร้อมจับเวลา สถิติ และเทคนิคเฉลย" canonical="/" />
+      <SEO title="Practicing Fast Math Skills — ฝึกคิดเลขเร็วออนไลน์" description="ฝึกคิดเลขเร็วหลายโหมด พร้อมจับเวลา สถิติ และเทคนิคเฉลย" canonical="/" />
       <section className="relative overflow-hidden bg-gradient-to-br from-background via-background to-accent/30 min-h-screen">
         {/* Animated background mathematical patterns */}
         <div className="absolute inset-0 opacity-10">

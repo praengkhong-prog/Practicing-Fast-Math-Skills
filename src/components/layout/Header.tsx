@@ -17,7 +17,7 @@ const Header = () => {
     <header className="sticky top-0 z-40 w-full border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link to="/" className="font-semibold tracking-tight">
-          <span className="bg-gradient-to-tr from-[hsl(var(--brand))] to-[hsl(var(--brand-2))] bg-clip-text text-transparent">Brainy Math Boost</span>
+          <span className="bg-gradient-to-tr from-[hsl(var(--brand))] to-[hsl(var(--brand-2))] bg-clip-text text-transparent">Practicing Fast Math Skills</span>
         </Link>
         
         <nav className="hidden gap-1 md:flex">
