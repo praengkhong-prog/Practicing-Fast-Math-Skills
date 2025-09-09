@@ -36,23 +36,43 @@ const ProtectedRoute = ({ children, requireAdmin = false, allowGuest = false }: 
   }
 
   // Require admin role
-  if (requireAdmin && userRole !== 'admin') {
-    return (
-      <main className="min-h-screen flex items-center justify-center bg-background px-4">
-        <Card className="w-full max-w-md">
-          <CardContent className="flex flex-col items-center justify-center py-12 space-y-4 text-center">
-            <div className="text-4xl">🔒</div>
-            <h2 className="text-xl font-semibold">ไม่มีสิทธิ์เข้าถึง</h2>
-            <p className="text-muted-foreground">
-              คุณไม่มีสิทธิ์ผู้ดูแลในการเข้าถึงหน้านี้
-            </p>
-            <p className="text-sm text-muted-foreground">
-              ติดต่อผู้พัฒนาหากต้องการสิทธิ์ผู้ดูแล
-            </p>
-          </CardContent>
-        </Card>
-      </main>
-    );
+  if (requireAdmin) {
+    // If still loading user role, show loading
+    if (userRole === null && user) {
+      return (
+        <main className="min-h-screen flex items-center justify-center bg-background">
+          <Card className="w-full max-w-md">
+            <CardContent className="flex flex-col items-center justify-center py-12 space-y-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[hsl(var(--brand))]"></div>
+              <p className="text-muted-foreground">ตรวจสอบสิทธิ์...</p>
+            </CardContent>
+          </Card>
+        </main>
+      );
+    }
+    
+    // Check if user doesn't have admin role
+    if (userRole !== 'admin') {
+      return (
+        <main className="min-h-screen flex items-center justify-center bg-background px-4">
+          <Card className="w-full max-w-md">
+            <CardContent className="flex flex-col items-center justify-center py-12 space-y-4 text-center">
+              <div className="text-4xl">🔒</div>
+              <h2 className="text-xl font-semibold">ไม่มีสิทธิ์เข้าถึง</h2>
+              <p className="text-muted-foreground">
+                คุณไม่มีสิทธิ์ผู้ดูแลในการเข้าถึงหน้านี้
+              </p>
+              <p className="text-sm text-muted-foreground">
+                บทบาทปัจจุบัน: {userRole || 'ไม่ระบุ'}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                ติดต่อผู้พัฒนาหากต้องการสิทธิ์ผู้ดูแล
+              </p>
+            </CardContent>
+          </Card>
+        </main>
+      );
+    }
   }
 
   return <>{children}</>;
