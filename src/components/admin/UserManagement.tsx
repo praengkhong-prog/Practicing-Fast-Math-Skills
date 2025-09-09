@@ -78,6 +78,11 @@ const UserManagement = () => {
     return user.user_roles?.[0]?.role || 'user';
   };
 
+  const formatUserId = (userId: string) => {
+    // แสดง 8 ตัวอักษรแรกและ 4 ตัวสุดท้าย
+    return `${userId.slice(0, 8)}...${userId.slice(-4)}`;
+  };
+
   if (loading) {
     return (
       <Card>
@@ -114,6 +119,7 @@ const UserManagement = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>ชื่อผู้ใช้</TableHead>
+                <TableHead>User ID</TableHead>
                 <TableHead>บทบาท</TableHead>
                 <TableHead>วันที่สมัคร</TableHead>
                 <TableHead>การจัดการ</TableHead>
@@ -126,6 +132,11 @@ const UserManagement = () => {
                   <TableRow key={user.id}>
                     <TableCell className="font-medium">
                       {user.display_name || 'ไม่ระบุชื่อ'}
+                    </TableCell>
+                    <TableCell className="font-mono text-sm text-muted-foreground">
+                      <span title={user.user_id} className="cursor-help">
+                        {formatUserId(user.user_id)}
+                      </span>
                     </TableCell>
                     <TableCell>
                       <Badge variant={role === 'admin' ? 'default' : 'secondary'}>
