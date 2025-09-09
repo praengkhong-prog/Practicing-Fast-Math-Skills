@@ -63,24 +63,42 @@ export const Profile: React.FC = () => {
 
     setSaving(true);
     
-    const updates = {
-      display_name: displayName || null,
-      bio: bio || null,
-      avatar_url: profile?.avatar_url
-    };
-    
-    const result = await ProfileController.updateProfile(user.id, updates);
-    
-    if (result.success) {
-      setProfile(result.data as Profile);
-      toast({
-        title: "สำเร็จ",
-        description: "บันทึกข้อมูลโปรไฟล์เรียบร้อยแล้ว"
-      });
-    } else {
+    try {
+      // ดึงข้อมูลโปรไฟล์ล่าสุดก่อนบันทึก เพื่อให้แน่ใจว่าได้ avatar_url ที่ถูกต้อง
+      const currentProfileResult = await ProfileController.getProfile(user.id);
+      const currentAvatarUrl = currentProfileResult.success && currentProfileResult.data 
+        ? currentProfileResult.data.avatar_url 
+        : profile?.avatar_url;
+
+      const updates = {
+        display_name: displayName || null,
+        bio: bio || null,
+        avatar_url: currentAvatarUrl
+      };
+      
+      console.log('Saving profile with data:', updates);
+      
+      const result = await ProfileController.updateProfile(user.id, updates);
+      
+      if (result.success) {
+        setProfile(result.data as Profile);
+        toast({
+          title: "สำเร็จ",
+          description: "บันทึกข้อมูลโปรไฟล์เรียบร้อยแล้ว"
+        });
+      } else {
+        console.error('Profile update error:', result.error);
+        toast({
+          title: "ข้อผิดพลาด",
+          description: result.error || "ไม่สามารถบันทึกข้อมูลได้",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Save profile error:', error);
       toast({
         title: "ข้อผิดพลาด",
-        description: result.error || "ไม่สามารถบันทึกข้อมูลได้",
+        description: "เกิดข้อผิดพลาดในการบันทึกข้อมูล",
         variant: "destructive"
       });
     }
