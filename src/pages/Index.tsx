@@ -28,7 +28,7 @@ const Index = () => {
         <div className="container mx-auto flex flex-col items-center gap-8 px-4 py-16 text-center sm:py-24 relative z-10">
           <div className="animate-fade-in space-y-4">
             <div className="inline-block p-4 rounded-full bg-gradient-primary/20 backdrop-blur-sm border border-brand/20 mb-6 animate-bounce-gentle">
-              <div className="text-4xl">🧠✨</div>
+              <div className="text-4xl">🔢📊</div>
             </div>
             <h1 className="max-w-4xl text-4xl font-extrabold leading-tight sm:text-6xl lg:text-7xl">
               <span className="math-gradient bg-clip-text text-transparent animate-pulse-math block mb-2">
