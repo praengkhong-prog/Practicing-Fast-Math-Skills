@@ -4,19 +4,56 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Survey = () => {
+  const { user } = useAuth();
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const key = "bmb:survey";
-    const arr = JSON.parse(localStorage.getItem(key) || "[]");
-    arr.push({ rating, comment, date: new Date().toISOString() });
-    localStorage.setItem(key, JSON.stringify(arr));
-    toast({ title: "ขอบคุณสำหรับคำติชม", description: "เราจะนำไปพัฒนาต่อ" });
-    setComment("");
+    
+    if (!user) {
+      toast({ 
+        title: "กรุณาเข้าสู่ระบบ", 
+        description: "คุณต้องเข้าสู่ระบบก่อนส่งแบบสำรวจ",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    
+    try {
+      const { error } = await supabase
+        .from('survey_responses')
+        .insert({
+          user_id: user.id,
+          rating,
+          comment: comment.trim() || null
+        });
+
+      if (error) throw error;
+
+      toast({ 
+        title: "ขอบคุณสำหรับคำติชม", 
+        description: "เราจะนำไปพัฒนาต่อ" 
+      });
+      setComment("");
+      setRating(5);
+    } catch (error: any) {
+      console.error('Error submitting survey:', error);
+      toast({ 
+        title: "เกิดข้อผิดพลาด", 
+        description: "ไม่สามารถบันทึกแบบสำรวจได้ กรุณาลองใหม่อีกครั้ง",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -46,7 +83,14 @@ const Survey = () => {
             </div>
           </CardContent>
           <CardFooter>
-            <Button type="submit" variant="hero">ส่งแบบสำรวจ</Button>
+            <Button type="submit" variant="hero" disabled={isSubmitting || !user}>
+              {isSubmitting ? "กำลังส่ง..." : "ส่งแบบสำรวจ"}
+            </Button>
+            {!user && (
+              <p className="text-sm text-muted-foreground ml-4">
+                กรุณาเข้าสู่ระบบก่อนส่งแบบสำรวจ
+              </p>
+            )}
           </CardFooter>
         </Card>
       </form>

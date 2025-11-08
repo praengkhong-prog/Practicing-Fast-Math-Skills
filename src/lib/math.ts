@@ -105,15 +105,49 @@ export interface SessionResult {
   date: string; // ISO
 }
 
-export function saveResult(result: SessionResult) {
-  const key = `bmb:results`;
-  const data: SessionResult[] = JSON.parse(localStorage.getItem(key) || "[]");
-  data.push(result);
-  localStorage.setItem(key, JSON.stringify(data));
+export async function saveResult(result: SessionResult, userId: string) {
+  const { supabase } = await import('@/integrations/supabase/client');
+  
+  try {
+    const { error } = await supabase
+      .from('practice_results')
+      .insert({
+        user_id: userId,
+        mode: result.mode,
+        level: result.level,
+        score: result.score,
+        avg_time_ms: Math.round(result.avgTimeMs)
+      });
+
+    if (error) throw error;
+    return { success: true };
+  } catch (error) {
+    console.error('Error saving practice result:', error);
+    return { success: false, error };
+  }
 }
 
-export function readResults() {
-  const key = `bmb:results`;
-  const data: SessionResult[] = JSON.parse(localStorage.getItem(key) || "[]");
-  return data;
+export async function readResults(userId: string): Promise<SessionResult[]> {
+  const { supabase } = await import('@/integrations/supabase/client');
+  
+  try {
+    const { data, error } = await supabase
+      .from('practice_results')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    return (data || []).map(record => ({
+      mode: record.mode as Mode,
+      level: record.level as Level,
+      score: record.score,
+      avgTimeMs: record.avg_time_ms,
+      date: record.created_at
+    }));
+  } catch (error) {
+    console.error('Error reading practice results:', error);
+    return [];
+  }
 }

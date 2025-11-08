@@ -1,8 +1,10 @@
+import { useEffect, useState } from "react";
 import SEO from "@/components/SEO";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { readResults } from "@/lib/math";
+import { readResults, SessionResult } from "@/lib/math";
 import { TrendingUp, Target, Clock, Award } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const modes: { key: string; label: string; icon: string }[] = [
   { key: "add", label: "บวก", icon: "➕" },
@@ -19,7 +21,20 @@ const difficulties: { key: string; label: string; icon: string }[] = [
 ];
 
 const Stats = () => {
-  const results = readResults();
+  const { user } = useAuth();
+  const [results, setResults] = useState<SessionResult[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (user) {
+      readResults(user.id).then(data => {
+        setResults(data);
+        setLoading(false);
+      });
+    } else {
+      setLoading(false);
+    }
+  }, [user]);
 
   const byMode: Record<string, { best: number; avg: string; count: number } | undefined> = {};
   modes.forEach((m) => {
@@ -87,6 +102,34 @@ const Stats = () => {
       </CardContent>
     </Card>
   );
+
+  if (!user) {
+    return (
+      <main className="container mx-auto px-4 py-10">
+        <SEO title="สถิติการฝึก — Brainy Math Boost" description="ดูคะแนนสูงสุดและเวลาเฉลี่ยในแต่ละโหมดและระดับความยาก" canonical="/stats" />
+        <Card className="text-center p-8">
+          <CardContent>
+            <div className="text-4xl mb-4">🔒</div>
+            <h2 className="text-2xl font-bold mb-2">กรุณาเข้าสู่ระบบ</h2>
+            <p className="text-muted-foreground">คุณต้องเข้าสู่ระบบเพื่อดูสถิติส่วนตัว</p>
+          </CardContent>
+        </Card>
+      </main>
+    );
+  }
+
+  if (loading) {
+    return (
+      <main className="container mx-auto px-4 py-10">
+        <SEO title="สถิติการฝึก — Brainy Math Boost" description="ดูคะแนนสูงสุดและเวลาเฉลี่ยในแต่ละโหมดและระดับความยาก" canonical="/stats" />
+        <Card className="text-center p-8">
+          <CardContent>
+            <div className="text-2xl">⏳ กำลังโหลดข้อมูล...</div>
+          </CardContent>
+        </Card>
+      </main>
+    );
+  }
 
   return (
     <main className="container mx-auto px-4 py-10">

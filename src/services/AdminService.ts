@@ -72,18 +72,31 @@ export class AdminService {
         .select('*', { count: 'exact', head: true })
         .eq('role', 'admin');
 
-      // Get practice sessions from localStorage
-      const practiceResults = JSON.parse(localStorage.getItem("bmb:results") || "[]");
-      const surveyResults = JSON.parse(localStorage.getItem("bmb:survey") || "[]");
+      // Get practice sessions count from Supabase
+      const { count: practiceCount } = await supabase
+        .from('practice_results')
+        .select('*', { count: 'exact', head: true });
+
+      // Get survey submissions count from Supabase
+      const { count: surveyCount } = await supabase
+        .from('survey_responses')
+        .select('*', { count: 'exact', head: true });
+
+      // Get recent practice sessions
+      const { data: recentPractice } = await supabase
+        .from('practice_results')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(5);
 
       return {
         success: true,
         data: {
           totalUsers: userCount || 0,
           totalAdmins: adminCount || 0,
-          practiceSessionsCount: practiceResults.length,
-          surveySubmissions: surveyResults.length,
-          recentActivity: practiceResults.slice(-5).reverse()
+          practiceSessionsCount: practiceCount || 0,
+          surveySubmissions: surveyCount || 0,
+          recentActivity: recentPractice || []
         }
       };
     } catch (error) {
@@ -92,26 +105,35 @@ export class AdminService {
   }
 
   static async getPracticeStats() {
-    const results = JSON.parse(localStorage.getItem("bmb:results") || "[]");
-    
-    const modeStats = results.reduce((acc: any, result: any) => {
-      const mode = result.mode || 'unknown';
-      if (!acc[mode]) {
-        acc[mode] = { count: 0, totalScore: 0, totalTime: 0 };
-      }
-      acc[mode].count++;
-      acc[mode].totalScore += result.score || 0;
-      acc[mode].totalTime += result.timeElapsed || 0;
-      return acc;
-    }, {});
+    try {
+      const { data: results } = await supabase
+        .from('practice_results')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      const allResults = results || [];
+      
+      const modeStats = allResults.reduce((acc: any, result: any) => {
+        const mode = result.mode || 'unknown';
+        if (!acc[mode]) {
+          acc[mode] = { count: 0, totalScore: 0, totalTime: 0 };
+        }
+        acc[mode].count++;
+        acc[mode].totalScore += result.score || 0;
+        acc[mode].totalTime += result.avg_time_ms || 0;
+        return acc;
+      }, {});
 
-    return {
-      success: true,
-      data: {
-        totalSessions: results.length,
-        modeStats,
-        recentSessions: results.slice(-10).reverse()
-      }
-    };
+      return {
+        success: true,
+        data: {
+          totalSessions: allResults.length,
+          modeStats,
+          recentSessions: allResults.slice(0, 10)
+        }
+      };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
   }
 }

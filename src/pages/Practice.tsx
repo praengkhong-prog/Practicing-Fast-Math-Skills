@@ -10,8 +10,10 @@ import { Label } from "@/components/ui/label";
 import { PracticeService } from "@/services/PracticeService";
 import { routes } from "@/routes/web";
 import { config } from "@/config/app";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Practice = () => {
+  const { user } = useAuth();
   const [params] = useSearchParams();
   const mode = (params.get("mode") as Mode) || "mix";
   const level = (params.get("level") as Level) || "easy";
@@ -46,11 +48,26 @@ const startRef = useRef<number>(performance.now());
     });
   };
 
-  const next = () => {
+  const next = async () => {
     if (index + 1 >= total) {
       const avg = times.length ? times.reduce((a, b) => a + b, 0) / times.length : 0;
-      saveResult({ mode, level, score, avgTimeMs: avg, date: new Date().toISOString() });
-      toast({ title: "บันทึกผลแล้ว", description: "ดูสถิติของคุณได้ในหน้า สถิติ" });
+      
+      if (user) {
+        const result = await saveResult(
+          { mode, level, score, avgTimeMs: avg, date: new Date().toISOString() },
+          user.id
+        );
+        
+        if (result.success) {
+          toast({ title: "บันทึกผลแล้ว", description: "ดูสถิติของคุณได้ในหน้า สถิติ" });
+        } else {
+          toast({ 
+            title: "ไม่สามารถบันทึกผลได้", 
+            description: "กรุณาลองใหม่อีกครั้ง",
+            variant: "destructive"
+          });
+        }
+      }
     }
     setAnswered(null);
     setIndex((i) => i + 1);
