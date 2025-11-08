@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      practice_results: {
+        Row: {
+          avg_time_ms: number
+          created_at: string
+          id: string
+          level: string
+          mode: string
+          score: number
+          total_questions: number
+          user_id: string
+        }
+        Insert: {
+          avg_time_ms: number
+          created_at?: string
+          id?: string
+          level: string
+          mode: string
+          score: number
+          total_questions?: number
+          user_id: string
+        }
+        Update: {
+          avg_time_ms?: number
+          created_at?: string
+          id?: string
+          level?: string
+          mode?: string
+          score?: number
+          total_questions?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -70,10 +103,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      get_current_user_role: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      get_current_user_role: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
