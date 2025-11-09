@@ -89,6 +89,15 @@ export class AdminService {
         .order('created_at', { ascending: false })
         .limit(5);
 
+      // Get monthly user registrations for the last 6 months
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('created_at')
+        .order('created_at', { ascending: true });
+
+      // Process monthly data
+      const monthlyData = this.processMonthlyUserData(profiles || []);
+
       return {
         success: true,
         data: {
@@ -96,12 +105,44 @@ export class AdminService {
           totalAdmins: adminCount || 0,
           practiceSessionsCount: practiceCount || 0,
           surveySubmissions: surveyCount || 0,
-          recentActivity: recentPractice || []
+          recentActivity: recentPractice || [],
+          monthlyUsers: monthlyData
         }
       };
     } catch (error) {
       return { success: false, error: error.message };
     }
+  }
+
+  static processMonthlyUserData(profiles: any[]) {
+    const monthlyMap = new Map<string, number>();
+    const now = new Date();
+    
+    // Initialize last 6 months
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      monthlyMap.set(key, 0);
+    }
+
+    // Count users per month
+    profiles.forEach(profile => {
+      const date = new Date(profile.created_at);
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      if (monthlyMap.has(key)) {
+        monthlyMap.set(key, (monthlyMap.get(key) || 0) + 1);
+      }
+    });
+
+    // Convert to array for chart
+    return Array.from(monthlyMap.entries()).map(([month, count]) => {
+      const [year, monthNum] = month.split('-');
+      const monthNames = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+      return {
+        month: `${monthNames[parseInt(monthNum) - 1]} ${year}`,
+        users: count
+      };
+    });
   }
 
   static async getPracticeStats() {
