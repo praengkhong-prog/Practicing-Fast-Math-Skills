@@ -46,33 +46,22 @@ export class AdminService {
 
   static async deleteUser(userId: string) {
     try {
-      // Call edge function to delete user from auth
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        throw new Error('No active session');
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: { userId }
+      });
+
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
       }
 
-      const response = await fetch(
-        `https://khnenudatuczlxslxzgq.supabase.co/functions/v1/delete-user`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ userId }),
-        }
-      );
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to delete user');
+      if (!data?.success) {
+        throw new Error(data?.error || 'Failed to delete user');
       }
 
       return { success: true };
     } catch (error) {
+      console.error('Delete user error:', error);
       return { success: false, error: error.message };
     }
   }
