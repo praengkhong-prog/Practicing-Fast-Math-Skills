@@ -38,3 +38,4 @@ export const middleware = {
   admin: (user: any) => user?.role === 'admin',
   guest: (user: any) => !user
 };
+
