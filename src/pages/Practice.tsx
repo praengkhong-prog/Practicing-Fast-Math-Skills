@@ -1,3 +1,4 @@
+
 // import { useEffect, useRef, useState } from "react";
 // import { useSearchParams, Link, useNavigate } from "react-router-dom";
 // import SEO from "@/components/SEO";
@@ -51,6 +52,7 @@
 //   const { user } = useAuth();
 //   const navigate = useNavigate();
 //   const [params] = useSearchParams();
+//   const currentYear = new Date().getFullYear(); // ดึงปีปัจจุบันสำหรับ Footer
   
 //   const modeId = params.get("modeId") || "mix"; 
 //   const modeName = params.get("modeName") || "โหมดผสม"; 
@@ -226,16 +228,16 @@
 //     }
 //   };
 
-//   // --- 🔥 จุดที่แก้ไข: confirmExit ---
+//   // --- confirmExit ---
 //   const confirmExit = async () => {
 //     setShowExitAlert(false);
     
 //     const currentAvg = times.length ? times.reduce((a, b) => a + b, 0) / times.length : 0;
 //     const questionsAnswered = times.length; 
     
-//     // บันทึกแบบ Incomplete ถ้ามีการตอบคำถามไปบ้างแล้ว
+//     // บันทึกแบบ Incomplete
 //     if (questionsAnswered > 0) {
-//         // ✅ แก้ไข: ใช้ 'total' แทน 'questionsAnswered' เพื่อให้ตัวส่วนเป็นจำนวนเต็มของชุดข้อสอบ
+//         // ใช้ 'total' แทน 'questionsAnswered' เพื่อให้ตัวส่วนเป็นจำนวนเต็มของชุดข้อสอบ
 //         await saveToDB('incomplete', score, currentAvg, total); 
 //         toast({ title: "บันทึกความคืบหน้าแล้ว", description: "สถานะ: ไม่สมบูรณ์" });
 //     }
@@ -268,127 +270,144 @@
 //   if (problems.length === 0) return <div>ไม่พบโจทย์ <Link to={routes.home}><Button>กลับ</Button></Link></div>;
 
 //   return (
-//     <main className="container mx-auto px-4 py-10 min-h-screen bg-gradient-to-br from-background via-background to-accent/20">
+//     // เพิ่ม flex flex-col justify-between เพื่อดัน footer ลงล่าง
+//     <main className="container mx-auto px-4 py-10 min-h-screen bg-gradient-to-br from-background via-background to-accent/20 flex flex-col justify-between">
 //       <SEO title={`ฝึกคิดเลขเร็ว (${modeName})`} description="โหมดฝึกคิดเลขเร็ว" canonical="/practice" />
       
-//       <div className="mb-8 flex flex-col md:flex-row items-center justify-between animate-fade-in relative z-10 gap-4">
-//         <div className="space-y-2 text-center md:text-left">
-//           <h1 className="text-3xl font-bold math-gradient bg-clip-text text-transparent">
-//              {modeName} • <span className="capitalize text-gray-500 text-2xl">{difficulty}</span>
-//           </h1>
-//           <div className="flex items-center justify-center md:justify-start gap-4">
-//             <p className="text-lg text-muted-foreground">
-//               <span className="font-bold text-brand">ข้อที่ {Math.min(index + 1, total)}</span>
-//               <span className="mx-2">/</span>
-//               <span>{total}</span>
-//             </p>
-//             <div className="flex items-center gap-2">
-//               <span className="text-2xl">🏆</span>
-//               <span className="text-xl font-bold text-brand-success">{score}</span>
+//       {/* Wrapper สำหรับเนื้อหาหลัก (ให้ยืดเต็มพื้นที่ flex-1) */}
+//       <div className="w-full flex-1">
+//         <div className="mb-8 flex flex-col md:flex-row items-center justify-between animate-fade-in relative z-10 gap-4">
+//             <div className="space-y-2 text-center md:text-left">
+//             <h1 className="text-3xl font-bold math-gradient bg-clip-text text-transparent">
+//                 {modeName} • <span className="capitalize text-gray-500 text-2xl">{difficulty}</span>
+//             </h1>
+//             <div className="flex items-center justify-center md:justify-start gap-4">
+//                 <p className="text-lg text-muted-foreground">
+//                 <span className="font-bold text-brand">ข้อที่ {Math.min(index + 1, total)}</span>
+//                 <span className="mx-2">/</span>
+//                 <span>{total}</span>
+//                 </p>
+//                 <div className="flex items-center gap-2">
+//                 <span className="text-2xl">🏆</span>
+//                 <span className="text-xl font-bold text-brand-success">{score}</span>
+//                 </div>
 //             </div>
-//           </div>
+//             </div>
+
+//             <div className="flex items-center gap-6">
+//             {!gameFinished && (
+//                 <div className="text-xs px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full border border-yellow-200">
+//                     สถานะ: กำลังเล่น
+//                 </div>
+//             )}
+//             <div className="text-center p-4 rounded-xl bg-white border shadow-sm">
+//                 <div className="text-brand-2 font-bold text-lg">⏱️ {avgSeconds} วินาที</div>
+//             </div>
+//             <div className="flex items-center gap-3 p-3 rounded-xl bg-white border shadow-sm">
+//                 <Switch id="show-tip" checked={showTipBefore} onCheckedChange={setShowTipBefore} />
+//                 <Label htmlFor="show-tip" className="text-sm font-medium cursor-pointer">💡 เฉลยเทคนิค</Label>
+//             </div>
+//             </div>
 //         </div>
 
-//         <div className="flex items-center gap-6">
-//            {!gameFinished && (
-//                <div className="text-xs px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full border border-yellow-200">
-//                    สถานะ: กำลังเล่น
-//                </div>
-//            )}
-//           <div className="text-center p-4 rounded-xl bg-white border shadow-sm">
-//             <div className="text-brand-2 font-bold text-lg">⏱️ {avgSeconds} วินาที</div>
-//           </div>
-//           <div className="flex items-center gap-3 p-3 rounded-xl bg-white border shadow-sm">
-//             <Switch id="show-tip" checked={showTipBefore} onCheckedChange={setShowTipBefore} />
-//             <Label htmlFor="show-tip" className="text-sm font-medium cursor-pointer">💡 เฉลยเทคนิค</Label>
-//           </div>
-//         </div>
+//         {!gameFinished ? (
+//             <Card className="math-card shadow-math-elevated">
+//             <CardHeader className="bg-gradient-subtle rounded-t-lg py-10">
+//                 <CardTitle className="text-4xl md:text-5xl font-bold text-center math-gradient bg-clip-text text-transparent">
+//                 {currentProblem.question}
+//                 </CardTitle>
+//             </CardHeader>
+//             <CardContent className="grid gap-4 p-6 sm:grid-cols-2">
+//                 {['a', 'b', 'c', 'd'].map((key) => {
+//                 const choiceKey = key.toUpperCase(); 
+//                 // @ts-ignore
+//                 const choiceText = currentProblem[`choice_${key}`]; 
+//                 const isSel = answered === choiceKey;
+//                 const isCorrect = choiceKey === currentProblem.correct_answer;
+//                 let variant = "outline"; 
+//                 if (answered) {
+//                     if (isSel) variant = isCorrect ? "default" : "destructive"; 
+//                     else if (isCorrect) variant = "default"; 
+//                 } else { variant = "secondary"; }
+
+//                 return (
+//                     <Button key={key} 
+//                     // @ts-ignore
+//                     variant={variant}
+//                     className={`h-20 text-2xl font-bold hover:scale-105 transition-transform number-display ${answered && isCorrect ? 'bg-green-600 hover:bg-green-700 text-white' : ''}`}
+//                     onClick={() => onAnswer(choiceKey)} disabled={answered !== null}
+//                     >
+//                     {choiceText}
+//                     </Button>
+//                 );
+//                 })}
+//             </CardContent>
+//             <CardFooter className="flex flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between p-6 bg-gradient-subtle rounded-b-lg">
+//                 <div className="w-full sm:w-auto flex-1 mr-4">
+//                     {showTipBefore && currentProblem.techniques ? (
+//                     <div className="p-4 rounded-xl bg-yellow-50 border border-yellow-200 animate-fade-in">
+//                         <div className="flex items-center gap-2 mb-1">
+//                         <span className="text-xl">💡</span>
+//                         <span className="font-bold text-yellow-700">{currentProblem.techniques.title}:</span>
+//                         </div>
+//                         <p className="text-sm text-yellow-800 leading-relaxed">{currentProblem.techniques.description}</p>
+//                     </div>
+//                     ) : <div className="hidden sm:block"></div>}
+//                 </div>
+//                 <div className="flex gap-3 w-full sm:w-auto justify-end">
+//                 <Button variant="outline" onClick={() => handleNavigationRequest(routes.home)}>ออก</Button>
+//                 <Button onClick={next} disabled={answered === null}>
+//                     {index + 1 >= total ? <>🏁 สรุปผล</> : <>ถัดไป →</>}
+//                 </Button>
+//                 </div>
+//             </CardFooter>
+//             </Card>
+//         ) : (
+//             /* --- หน้าสรุปผล --- */
+//             <Card className="math-card shadow-math-glow max-w-2xl mx-auto">
+//             <CardHeader className="bg-gradient-primary text-center rounded-t-lg">
+//                 <CardTitle className="text-2xl font-bold text-white">🎉 สรุปผลการฝึก</CardTitle>
+//             </CardHeader>
+//             <CardContent className="grid gap-6 p-8 text-center">
+//                 <div>
+//                     <div className="text-6xl font-bold math-gradient bg-clip-text text-transparent mb-2">{score} / {total}</div>
+//                     <p className="text-muted-foreground">คะแนนของคุณ</p>
+//                 </div>
+//                 <div className="grid grid-cols-2 gap-4">
+//                     <div className="p-4 bg-gray-50 rounded-lg">
+//                         <div className="text-2xl font-bold text-brand-2">{avgSeconds}s</div>
+//                         <div className="text-xs text-muted-foreground">เวลาเฉลี่ยต่อข้อ</div>
+//                     </div>
+//                     <div className="p-4 bg-gray-50 rounded-lg">
+//                         <div className="text-2xl font-bold text-brand">{Math.round((score / total) * 100)}%</div>
+//                         <div className="text-xs text-muted-foreground">ความแม่นยำ</div>
+//                     </div>
+//                 </div>
+//             </CardContent>
+//             <CardFooter className="flex gap-4 justify-center p-6 bg-gray-50/50">
+//                 <Button variant="default" size="lg" onClick={() => handleNavigationRequest(routes.stats)}>
+//                     📊 ดูสถิติ
+//                 </Button>
+//                 <Button variant="outline" size="lg" onClick={() => handleNavigationRequest(routes.home)}>
+//                     🏠 หน้าหลัก
+//                 </Button>
+//             </CardFooter>
+//             </Card>
+//         )}
 //       </div>
 
-//       {!gameFinished ? (
-//         <Card className="math-card shadow-math-elevated">
-//           <CardHeader className="bg-gradient-subtle rounded-t-lg py-10">
-//             <CardTitle className="text-4xl md:text-5xl font-bold text-center math-gradient bg-clip-text text-transparent">
-//               {currentProblem.question}
-//             </CardTitle>
-//           </CardHeader>
-//           <CardContent className="grid gap-4 p-6 sm:grid-cols-2">
-//             {['a', 'b', 'c', 'd'].map((key) => {
-//               const choiceKey = key.toUpperCase(); 
-//               // @ts-ignore
-//               const choiceText = currentProblem[`choice_${key}`]; 
-//               const isSel = answered === choiceKey;
-//               const isCorrect = choiceKey === currentProblem.correct_answer;
-//               let variant = "outline"; 
-//               if (answered) {
-//                  if (isSel) variant = isCorrect ? "default" : "destructive"; 
-//                  else if (isCorrect) variant = "default"; 
-//               } else { variant = "secondary"; }
-
-//               return (
-//                 <Button key={key} 
-//                   // @ts-ignore
-//                   variant={variant}
-//                   className={`h-20 text-2xl font-bold hover:scale-105 transition-transform number-display ${answered && isCorrect ? 'bg-green-600 hover:bg-green-700 text-white' : ''}`}
-//                   onClick={() => onAnswer(choiceKey)} disabled={answered !== null}
-//                 >
-//                   {choiceText}
-//                 </Button>
-//               );
-//             })}
-//           </CardContent>
-//           <CardFooter className="flex flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between p-6 bg-gradient-subtle rounded-b-lg">
-//              <div className="w-full sm:w-auto flex-1 mr-4">
-//                 {showTipBefore && currentProblem.techniques ? (
-//                   <div className="p-4 rounded-xl bg-yellow-50 border border-yellow-200 animate-fade-in">
-//                     <div className="flex items-center gap-2 mb-1">
-//                       <span className="text-xl">💡</span>
-//                       <span className="font-bold text-yellow-700">{currentProblem.techniques.title}:</span>
-//                     </div>
-//                     <p className="text-sm text-yellow-800 leading-relaxed">{currentProblem.techniques.description}</p>
-//                   </div>
-//                 ) : <div className="hidden sm:block"></div>}
-//             </div>
-//             <div className="flex gap-3 w-full sm:w-auto justify-end">
-//               <Button variant="outline" onClick={() => handleNavigationRequest(routes.home)}>ออก</Button>
-//               <Button onClick={next} disabled={answered === null}>
-//                 {index + 1 >= total ? <>🏁 สรุปผล</> : <>ถัดไป →</>}
-//               </Button>
-//             </div>
-//           </CardFooter>
-//         </Card>
-//       ) : (
-//         /* --- หน้าสรุปผล --- */
-//         <Card className="math-card shadow-math-glow max-w-2xl mx-auto">
-//           <CardHeader className="bg-gradient-primary text-center rounded-t-lg">
-//             <CardTitle className="text-2xl font-bold text-white">🎉 สรุปผลการฝึก</CardTitle>
-//           </CardHeader>
-//           <CardContent className="grid gap-6 p-8 text-center">
-//             <div>
-//                 <div className="text-6xl font-bold math-gradient bg-clip-text text-transparent mb-2">{score} / {total}</div>
-//                 <p className="text-muted-foreground">คะแนนของคุณ</p>
-//             </div>
-//             <div className="grid grid-cols-2 gap-4">
-//                 <div className="p-4 bg-gray-50 rounded-lg">
-//                     <div className="text-2xl font-bold text-brand-2">{avgSeconds}s</div>
-//                     <div className="text-xs text-muted-foreground">เวลาเฉลี่ยต่อข้อ</div>
-//                 </div>
-//                 <div className="p-4 bg-gray-50 rounded-lg">
-//                     <div className="text-2xl font-bold text-brand">{Math.round((score / total) * 100)}%</div>
-//                     <div className="text-xs text-muted-foreground">ความแม่นยำ</div>
-//                 </div>
-//             </div>
-//           </CardContent>
-//           <CardFooter className="flex gap-4 justify-center p-6 bg-gray-50/50">
-//             <Button variant="default" size="lg" onClick={() => handleNavigationRequest(routes.stats)}>
-//                 📊 ดูสถิติ
-//             </Button>
-//             <Button variant="outline" size="lg" onClick={() => handleNavigationRequest(routes.home)}>
-//                 🏠 หน้าหลัก
-//             </Button>
-//           </CardFooter>
-//         </Card>
-//       )}
+//       {/* --- Footer Start --- */}
+//       <footer className="w-full py-6 text-center mt-8 border-t border-slate-200/50">
+//           <div className="container mx-auto px-4">
+//             <p className="text-xs md:text-sm text-muted-foreground/70 font-light">
+//               &copy; {currentYear} ภาควิชาคอมพิวเตอร์ คณะวิทยาศาสตร์และเทคโนโลยี 
+//               <span className="hidden sm:inline"> • </span> 
+//               <br className="sm:hidden" /> 
+//               มหาวิทยาลัยราชภัฏเชียงใหม่
+//             </p>
+//           </div>
+//       </footer>
+//       {/* --- Footer End --- */}
 
 //       {/* --- ALERT DIALOG --- */}
 //       <AlertDialog open={showExitAlert} onOpenChange={setShowExitAlert}>
@@ -498,7 +517,7 @@ const Practice = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const currentYear = new Date().getFullYear(); // ดึงปีปัจจุบันสำหรับ Footer
+  const currentYear = new Date().getFullYear(); 
   
   const modeId = params.get("modeId") || "mix"; 
   const modeName = params.get("modeName") || "โหมดผสม"; 
@@ -629,7 +648,7 @@ const Practice = () => {
     }
   };
 
-  // --- 🛠️ ฟังก์ชันบันทึกข้อมูล ---
+  // --- 🛠️ ฟังก์ชันบันทึกข้อมูล (แก้ไขแล้ว) ---
   const saveToDB = async (status: 'completed' | 'incomplete', finalScore: number, avgTime: number, totalQs: number) => {
     if (!user) {
         console.error("User not logged in");
@@ -639,9 +658,13 @@ const Practice = () => {
     try {
         console.log("Preparing to save...", { status, finalScore, avgTime });
 
+        // ตรวจสอบว่า modeId เป็น mix หรือไม่ ถ้าใช่ให้เป็น null (เพราะ DB เก็บเป็น UUID)
+        // ถ้าเป็น ID ของโหมดจริงๆ ก็ส่งไปตามปกติ
+        const modeIdToSend = (modeId === 'mix' || modeId === 'mixed') ? null : modeId;
+
         const { data, error } = await supabase.from('practice_results').insert({
             user_id: user.id,
-            mode: modeId || 'mixed',
+            mode_id: modeIdToSend, // ✅ แก้ไขตรงนี้: เปลี่ยน key เป็น mode_id
             level: difficulty || 'easy',
             score: finalScore,
             total_questions: totalQs,
@@ -651,7 +674,11 @@ const Practice = () => {
         }).select();
 
         if (error) {
-            alert(`บันทึกไม่สำเร็จ: ${error.message}`);
+            toast({ 
+                title: "บันทึกไม่สำเร็จ", 
+                description: error.message, 
+                variant: "destructive" 
+            });
             console.error("Supabase Save Error:", error);
         } else {
             console.log("Save Success!", data);

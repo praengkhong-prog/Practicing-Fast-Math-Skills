@@ -2195,7 +2195,7 @@ const ContentManager = () => {
 
                     {/* เชื่อมโยงหมวดหมู่ */}
                     <div className="space-y-2">
-                        <Label>หมวดการฝึก (Category) <span className="text-red-500">*</span></Label>
+                        <Label>โหมดการฝึก (Category) <span className="text-red-500">*</span></Label>
                         <Select 
                             value={techFormData.practice_mode_id || undefined} 
                             onValueChange={(val) => setTechFormData({...techFormData, practice_mode_id: val})}
