@@ -1,469 +1,292 @@
-// import { useState, useEffect } from 'react';
-// import { AdminService } from '@/services/AdminService';
-// import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-// import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-// import { Button } from '@/components/ui/button';
-// import { ArrowLeft, Star, MessageSquare, Calendar, User } from 'lucide-react';
-
-// // 1. แก้ไข Interface ให้ตรงกับข้อมูลจริง (เปลี่ยน suggestion เป็น comment)
-// interface SurveyResponse {
-//   id: string;
-//   created_at: string;
-//   rating: number;
-//   comment?: string; // เปลี่ยนจาก suggestion เป็น comment (และใส่ ? เผื่อเป็น null)
-  
-//   // ปรับ profiles ให้รองรับข้อมูลที่ Join มา (อาจเป็น Array หรือ Object เดียวก็ได้ แล้วแต่ Query)
-//   profiles?: {
-//     display_name: string;
-//     email: string;
-//   } | null; // เพิ่ม | null เผื่อหาไม่เจอ
-// }
+// import { useState, useMemo, useEffect } from 'react';
+// import { supabase } from '@/integrations/supabase/client'; 
+// import { 
+//   Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
+// } from "@/components/ui/table";
+// import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+// import { Button } from "@/components/ui/button";
+// import { 
+//   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription 
+// } from "@/components/ui/dialog";
+// import { Star, Eye, User, Calendar, MessageSquare, ArrowLeft, Loader2 } from "lucide-react";
 
 // interface SurveyResultsProps {
-//   onBack: () => void;
+//   onBack?: () => void;
 // }
 
-// const SurveyResults = ({ onBack }: SurveyResultsProps) => {
-//   const [surveys, setSurveys] = useState<SurveyResponse[]>([]);
+// interface SurveySubmission {
+//   id: string;
+//   created_at: string;
+//   user_email: string;
+//   user_name: string;
+//   rating: number; 
+//   comment: string | null;
+// }
+
+// interface UserSummary {
+//   email: string;
+//   name: string;
+//   totalSubmissions: number;
+//   averageRating: number;
+//   lastSubmission: string;
+//   history: SurveySubmission[];
+// }
+
+// const StarRating = ({ rating }: { rating: number }) => {
+//   return (
+//     <div className="flex items-center gap-1">
+//       {[1, 2, 3, 4, 5].map((star) => (
+//         <Star
+//           key={star}
+//           className={`w-4 h-4 ${
+//             star <= Math.round(rating) 
+//               ? "fill-yellow-400 text-yellow-400" 
+//               : "text-gray-300"
+//           }`}
+//         />
+//       ))}
+//       <span className="text-sm text-gray-600 ml-1">({rating.toFixed(1)})</span>
+//     </div>
+//   );
+// };
+
+// export default function SurveyResults({ onBack }: SurveyResultsProps) {
+  
+//   const [rawData, setRawData] = useState<SurveySubmission[]>([]);
 //   const [loading, setLoading] = useState(true);
+//   const [selectedUser, setSelectedUser] = useState<UserSummary | null>(null);
+
+//   const fetchSurveys = async () => {
+//     try {
+//       setLoading(true);
+      
+//       // ✅ จุดแก้ไข 1: ขอ display_name แทน first_name
+//       const { data, error } = await supabase
+//         .from('survey_responses')
+//         .select(`
+//           id,
+//           created_at,
+//           rating,
+//           comment,
+//           user_id,
+//           profiles (
+//             email,
+//             display_name
+//           )
+//         `)
+//         .order('created_at', { ascending: false });
+
+//       if (error) {
+//         console.error("Error fetching surveys:", error);
+//         return;
+//       }
+
+//       if (data) {
+//         const formattedData: SurveySubmission[] = data.map((item: any) => ({
+//           id: item.id,
+//           created_at: item.created_at,
+//           rating: item.rating,
+//           comment: item.comment,
+//           user_email: item.profiles?.email || 'Unknown Email', 
+//           // ✅ จุดแก้ไข 2: ใช้ display_name
+//           user_name: item.profiles?.display_name || item.profiles?.email || 'Unknown User'
+//         }));
+        
+//         setRawData(formattedData);
+//       }
+//     } catch (error) {
+//       console.error("Unexpected error:", error);
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
 
 //   useEffect(() => {
-//     const fetchSurveys = async () => {
-//       setLoading(true);
-//       const result = await AdminService.getSurveyResponses();
-//       if (result.success) {
-//         // 2. ใช้ as unknown as ... เพื่อแก้ error Type Mismatch
-//         // (บังคับบอก TypeScript ว่าข้อมูลนี้คือ SurveyResponse[] นะ เชื่อฉันเถอะ)
-//         setSurveys((result.data as unknown) as SurveyResponse[]);
-//       }
-//       setLoading(false);
-//     };
-
 //     fetchSurveys();
 //   }, []);
 
-//   const renderStars = (rating: number) => {
-//     return (
-//       <div className="flex gap-1">
-//         {[...Array(5)].map((_, i) => (
-//           <Star 
-//             key={i} 
-//             className={`w-4 h-4 ${i < rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} 
-//           />
-//         ))}
-//       </div>
-//     );
-//   };
+//   const groupedData = useMemo(() => {
+//     const map = new Map<string, UserSummary>();
+
+//     rawData.forEach((item) => {
+//       if (!map.has(item.user_email)) {
+//         map.set(item.user_email, {
+//           email: item.user_email,
+//           name: item.user_name,
+//           totalSubmissions: 0,
+//           averageRating: 0, 
+//           lastSubmission: item.created_at,
+//           history: []
+//         });
+//       }
+
+//       const user = map.get(item.user_email)!;
+//       user.history.push(item);
+//       user.totalSubmissions += 1;
+      
+//       if (new Date(item.created_at) > new Date(user.lastSubmission)) {
+//         user.lastSubmission = item.created_at;
+//       }
+//     });
+
+//     return Array.from(map.values()).map(user => {
+//       const totalScore = user.history.reduce((sum, curr) => sum + curr.rating, 0);
+//       user.averageRating = totalScore / user.totalSubmissions;
+//       user.history.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+//       return user;
+//     });
+//   }, [rawData]);
+
+//   const systemAverage = groupedData.length > 0 
+//     ? groupedData.reduce((sum, user) => sum + user.averageRating, 0) / groupedData.length 
+//     : 0;
 
 //   if (loading) {
-//     return <div className="p-8 text-center">กำลังโหลดข้อมูลแบบสอบถาม...</div>;
+//       return <div className="flex justify-center p-10"><Loader2 className="animate-spin text-primary" /></div>;
 //   }
 
 //   return (
 //     <div className="space-y-6">
+      
 //       <div className="flex items-center gap-4">
-//         <Button variant="outline" size="sm" onClick={onBack}>
-//           <ArrowLeft className="w-4 h-4 mr-2" /> กลับ
-//         </Button>
-//         <h2 className="text-2xl font-bold tracking-tight">ผลสำรวจความพึงพอใจ</h2>
+//         {onBack && (
+//             <Button variant="outline" size="icon" onClick={onBack}>
+//                 <ArrowLeft className="w-4 h-4" />
+//             </Button>
+//         )}
+//         <h1 className="text-2xl font-bold text-gray-800">สรุปผลความพึงพอใจ (Survey Summary)</h1>
+//       </div>
+
+//       <div className="grid gap-4 md:grid-cols-3">
+//         <Card>
+//           <CardHeader className="pb-2">
+//             <CardTitle className="text-sm font-medium text-gray-500">ความพึงพอใจเฉลี่ย (ทั้งระบบ)</CardTitle>
+//           </CardHeader>
+//           <CardContent>
+//              <div className="text-2xl font-bold flex items-center gap-2">
+//                 {systemAverage.toFixed(2)} / 5.0
+//                 <Star className="text-yellow-400 fill-yellow-400 w-6 h-6" />
+//              </div>
+//           </CardContent>
+//         </Card>
+//         <Card>
+//           <CardHeader className="pb-2">
+//             <CardTitle className="text-sm font-medium text-gray-500">จำนวนผู้ทำแบบสำรวจ</CardTitle>
+//           </CardHeader>
+//           <CardContent>
+//              <div className="text-2xl font-bold">{groupedData.length} คน</div>
+//           </CardContent>
+//         </Card>
+//         <Card>
+//           <CardHeader className="pb-2">
+//             <CardTitle className="text-sm font-medium text-gray-500">จำนวนครั้งที่ส่งทั้งหมด</CardTitle>
+//           </CardHeader>
+//           <CardContent>
+//              <div className="text-2xl font-bold">{rawData.length} ครั้ง</div>
+//           </CardContent>
+//         </Card>
 //       </div>
 
 //       <Card>
 //         <CardHeader>
-//           <CardTitle className="flex items-center gap-2">
-//             <MessageSquare className="h-5 w-5" />
-//             รายการตอบกลับ ({surveys.length})
-//           </CardTitle>
+//           <CardTitle>รายชื่อผู้ใช้งานและการประเมิน</CardTitle>
 //         </CardHeader>
 //         <CardContent>
 //           <Table>
 //             <TableHeader>
 //               <TableRow>
-//                 <TableHead>วันที่</TableHead>
 //                 <TableHead>ผู้ใช้งาน</TableHead>
-//                 <TableHead>คะแนน</TableHead>
-//                 <TableHead>ความคิดเห็น / ข้อเสนอแนะ</TableHead>
+//                 <TableHead className="text-center">จำนวนครั้งที่ทำ</TableHead>
+//                 <TableHead>ความพึงพอใจเฉลี่ย</TableHead>
+//                 <TableHead>ส่งล่าสุดเมื่อ</TableHead>
+//                 <TableHead className="text-right">จัดการ</TableHead>
 //               </TableRow>
 //             </TableHeader>
 //             <TableBody>
-//               {surveys.length === 0 ? (
+//               {groupedData.length > 0 ? (
+//                 groupedData.map((user) => (
+//                   <TableRow key={user.email}>
+//                     <TableCell>
+//                       <div className="flex flex-col">
+//                         <span className="font-medium flex items-center gap-2">
+//                           <User className="w-4 h-4" /> {user.name}
+//                         </span>
+//                         <span className="text-xs text-gray-500 ml-6">{user.email}</span>
+//                       </div>
+//                     </TableCell>
+//                     <TableCell className="text-center">
+//                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+//                         {user.totalSubmissions} ครั้ง
+//                       </span>
+//                     </TableCell>
+//                     <TableCell>
+//                       <StarRating rating={user.averageRating} />
+//                     </TableCell>
+//                     <TableCell className="text-sm text-gray-500">
+//                       {new Date(user.lastSubmission).toLocaleDateString('th-TH', {
+//                           day: 'numeric', month: 'short', year: '2-digit', hour: '2-digit', minute:'2-digit'
+//                       })}
+//                     </TableCell>
+//                     <TableCell className="text-right">
+//                       <Button 
+//                           variant="outline" 
+//                           size="sm" 
+//                           onClick={() => setSelectedUser(user)}
+//                           className="gap-2 text-blue-600 hover:text-blue-700"
+//                       >
+//                           <Eye className="w-4 h-4" /> ดูประวัติ
+//                       </Button>
+//                     </TableCell>
+//                   </TableRow>
+//                 ))
+//               ) : (
 //                 <TableRow>
-//                   <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-//                     ยังไม่มีข้อมูลการตอบแบบสอบถาม
+//                   <TableCell colSpan={5} className="text-center h-24 text-gray-500">
+//                     ไม่พบข้อมูลแบบสำรวจในระบบ
 //                   </TableCell>
 //                 </TableRow>
-//               ) : (
-//                 surveys.map((item) => {
-//                     // ตรวจสอบข้อมูล profile (บางทีอาจมาเป็น Array หรือ Object)
-//                     // ถ้า data มาแบบ profiles: [...] (Array) ให้ดึงตัวแรก
-//                     // ถ้า data มาแบบ profiles: {...} (Object) ให้ใช้เลย
-//                     const profileData = Array.isArray(item.profiles) 
-//                         ? item.profiles[0] 
-//                         : item.profiles;
-
-//                     return (
-//                       <TableRow key={item.id}>
-//                         <TableCell className="font-medium whitespace-nowrap">
-//                           <div className="flex items-center gap-2">
-//                             <Calendar className="w-4 h-4 text-gray-400" />
-//                             {new Date(item.created_at).toLocaleDateString('th-TH', {
-//                                 year: 'numeric',
-//                                 month: 'short',
-//                                 day: 'numeric',
-//                                 hour: '2-digit',
-//                                 minute: '2-digit'
-//                             })}
-//                           </div>
-//                         </TableCell>
-//                         <TableCell>
-//                           <div className="flex flex-col">
-//                             <span className="flex items-center gap-2 font-medium">
-//                                 <User className="w-3 h-3" />
-//                                 {profileData?.display_name || 'ไม่ระบุชื่อ'}
-//                             </span>
-//                             <span className="text-xs text-muted-foreground ml-5">
-//                                 {profileData?.email}
-//                             </span>
-//                           </div>
-//                         </TableCell>
-//                         <TableCell>
-//                             {renderStars(item.rating || 0)}
-//                         </TableCell>
-//                         <TableCell className="max-w-[400px]">
-//                             {/* 3. แก้ไขการเรียกใช้ตัวแปรจาก suggestion เป็น comment */}
-//                             {item.comment ? (
-//                                 <span className="text-sm">{item.comment}</span>
-//                             ) : (
-//                                 <span className="text-xs text-gray-400 italic">- ไม่มีข้อความ -</span>
-//                             )}
-//                         </TableCell>
-//                       </TableRow>
-//                     );
-//                 })
 //               )}
 //             </TableBody>
 //           </Table>
 //         </CardContent>
 //       </Card>
-//     </div>
-//   );
-// };
 
-// export default SurveyResults;
-
-
-
-// import { useState, useEffect } from 'react';
-// import { supabase } from '@/supabaseClient'; // ⚠️ ตรวจสอบ path ให้ตรงกับโปรเจกต์คุณ
-// import { ArrowLeft, Calendar, Star, MessageSquare, User } from 'lucide-react';
-// import { Card, CardContent } from '@/components/ui/card';
-
-// // กำหนด Type ให้ตรงกับตารางใน Database
-// interface SurveyResponse {
-//   id: string; // ควรมี id ไว้ใช้เป็น key (ถ้าใน DB ไม่มีให้ลบออก)
-//   user_id: string;
-//   rating: number;
-//   comment: string;
-//   created_at: string;
-// }
-
-// interface SurveyResultsProps {
-//   onBack: () => void;
-// }
-
-// export default function SurveyResults({ onBack }: SurveyResultsProps) {
-//   const [data, setData] = useState<SurveyResponse[]>([]);
-//   const [loading, setLoading] = useState(true);
-
-//   useEffect(() => {
-//     const fetchSurveys = async () => {
-//       try {
-//         setLoading(true);
-//         // ดึงข้อมูลจากตาราง survey_responses
-//         const { data: results, error } = await supabase
-//           .from('survey_responses')
-//           .select('id, user_id, rating, comment, created_at') // เลือก field ที่ต้องการ
-//           .order('created_at', { ascending: false }); // เรียงจากใหม่ไปเก่า
-
-//         if (error) throw error;
-        
-//         setData((results as SurveyResponse[]) || []);
-//       } catch (err) {
-//         console.error('Error fetching surveys:', err);
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
-
-//     fetchSurveys();
-//   }, []);
-
-//   // ฟังก์ชันแปลงวันที่
-//   const formatDate = (dateString: string) => {
-//     return new Date(dateString).toLocaleString('th-TH', {
-//       year: 'numeric',
-//       month: 'long',
-//       day: 'numeric',
-//       hour: '2-digit',
-//       minute: '2-digit',
-//     });
-//   };
-
-//   // ฟังก์ชันแสดงดาวตามคะแนน Rating
-//   const renderStars = (rating: number) => {
-//     return (
-//       <div className="flex text-yellow-400">
-//         {[...Array(5)].map((_, i) => (
-//           <Star 
-//             key={i} 
-//             className={`w-4 h-4 ${i < rating ? 'fill-current' : 'text-gray-300'}`} 
-//           />
-//         ))}
-//         <span className="ml-2 text-gray-600 text-xs pt-0.5">({rating}/5)</span>
-//       </div>
-//     );
-//   };
-
-//   return (
-//     <div className="space-y-6">
-//       {/* Header + Back Button */}
-//       <div className="flex items-center space-x-4">
-//         <button 
-//           onClick={onBack}
-//           className="p-2 hover:bg-gray-100 rounded-full transition-colors flex items-center gap-2 text-gray-600"
-//         >
-//           <ArrowLeft className="w-5 h-5" />
-//           <span>ย้อนกลับ</span>
-//         </button>
-//         <h2 className="text-2xl font-bold text-gray-800">ผลสำรวจความพึงพอใจ (Survey Results)</h2>
-//       </div>
-
-//       <Card>
-//         <CardContent className="p-0 overflow-hidden">
-//           <div className="overflow-x-auto">
-//             <table className="w-full text-sm text-left">
-//               <thead className="text-xs text-gray-700 uppercase bg-gray-50 border-b">
-//                 <tr>
-//                   <th className="px-6 py-4 w-[200px]">วันที่/เวลา</th>
-//                   <th className="px-6 py-4 w-[150px]">User ID</th>
-//                   <th className="px-6 py-4 w-[180px]">ความพึงพอใจ</th>
-//                   <th className="px-6 py-4">ความคิดเห็น</th>
-//                 </tr>
-//               </thead>
-//               <tbody className="divide-y divide-gray-100">
-//                 {loading ? (
-//                   <tr><td colSpan={4} className="px-6 py-8 text-center text-gray-500">กำลังโหลดข้อมูล...</td></tr>
-//                 ) : data.length === 0 ? (
-//                   <tr><td colSpan={4} className="px-6 py-8 text-center text-gray-500">ไม่พบข้อมูลผลสำรวจ</td></tr>
-//                 ) : (
-//                   data.map((item, index) => (
-//                     <tr key={item.id || index} className="bg-white hover:bg-gray-50 transition-colors">
-//                       {/* วันที่ */}
-//                       <td className="px-6 py-4 text-gray-500 whitespace-nowrap align-top">
-//                         <div className="flex items-center gap-2">
-//                           <Calendar className="w-4 h-4 text-gray-400" />
-//                           {formatDate(item.created_at)}
+//       <Dialog open={!!selectedUser} onOpenChange={(open) => !open && setSelectedUser(null)}>
+//         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+//           <DialogHeader>
+//             <DialogTitle className="flex items-center gap-2 text-xl">
+//                 <MessageSquare className="w-5 h-5 text-blue-600" />
+//                 ประวัติการประเมิน: {selectedUser?.name}
+//             </DialogTitle>
+//             <DialogDescription>
+//                 อีเมล: {selectedUser?.email} | เฉลี่ย: {selectedUser?.averageRating.toFixed(2)}/5
+//             </DialogDescription>
+//           </DialogHeader>
+          
+//           <div className="mt-4 space-y-4">
+//             {selectedUser?.history.map((record, index) => (
+//                 <div key={record.id} className="p-4 border rounded-lg bg-gray-50 hover:bg-white transition-colors">
+//                     <div className="flex justify-between items-start mb-2">
+//                         <div className="flex items-center gap-2 text-sm text-gray-500">
+//                             <span className="font-bold text-gray-700">ครั้งที่ {selectedUser.history.length - index}</span>
+//                             <span>•</span>
+//                             <Calendar className="w-3 h-3" />
+//                             {new Date(record.created_at).toLocaleDateString('th-TH', {
+//                                 day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'
+//                             })}
 //                         </div>
-//                       </td>
-
-//                       {/* User ID */}
-//                       <td className="px-6 py-4 align-top">
-//                          <div className="flex items-center gap-2 text-gray-700 font-mono text-xs">
-//                             <User className="w-4 h-4 text-gray-400" />
-//                             <span className="truncate max-w-[120px]" title={item.user_id}>
-//                                 {item.user_id}
-//                             </span>
-//                          </div>
-//                       </td>
-
-//                       {/* Rating (Stars) */}
-//                       <td className="px-6 py-4 align-top">
-//                         {renderStars(item.rating)}
-//                       </td>
-
-//                       {/* Comment */}
-//                       <td className="px-6 py-4 text-gray-600 align-top">
-//                         <div className="flex gap-2">
-//                             <MessageSquare className="w-4 h-4 text-gray-400 mt-1 flex-shrink-0" />
-//                             <p className="text-sm leading-relaxed">
-//                                 {item.comment ? item.comment : <span className="text-gray-400 italic">- ไม่มีความคิดเห็น -</span>}
-//                             </p>
-//                         </div>
-//                       </td>
-//                     </tr>
-//                   ))
-//                 )}
-//               </tbody>
-//             </table>
+//                         <StarRating rating={record.rating} />
+//                     </div>
+                    
+//                     <div className="text-sm text-gray-700 bg-white p-3 rounded border border-gray-100 shadow-sm min-h-[50px]">
+//                         <span className="font-semibold text-gray-900">ความเห็น: </span>
+//                         {record.comment ? record.comment : ""}
+//                     </div>
+//                 </div>
+//             ))}
 //           </div>
-//         </CardContent>
-//       </Card>
-//     </div>
-//   );
-// }
-
-
-// import { useState, useEffect } from 'react';
-// // import { supabase } from '@/supabaseClient'; // ❌ ไม่ใช้แล้ว ให้ใช้ Service แทน
-// import { AdminService } from '@/services/AdminService'; // ✅ เรียกใช้ Service
-// import { ArrowLeft, Calendar, Star, MessageSquare, User, Mail } from 'lucide-react';
-// import { Card, CardContent } from '@/components/ui/card';
-
-// // ปรับ Interface ให้รองรับข้อมูล profiles ที่ Service ส่งมา
-// interface SurveyResponse {
-//   id: string;
-//   user_id: string;
-//   rating: number;
-//   comment: string;
-//   created_at: string;
-//   // ✅ เพิ่มส่วนนี้
-//   profiles?: {
-//     display_name?: string;
-//     email?: string;
-//   };
-// }
-
-// interface SurveyResultsProps {
-//   onBack: () => void;
-// }
-
-// export default function SurveyResults({ onBack }: SurveyResultsProps) {
-//   const [data, setData] = useState<SurveyResponse[]>([]);
-//   const [loading, setLoading] = useState(true);
-
-//   useEffect(() => {
-//     const fetchSurveys = async () => {
-//       try {
-//         setLoading(true);
-        
-//         // ✅ เปลี่ยนมาใช้ AdminService ที่เราแก้ไปเมื่อกี้
-//         const result = await AdminService.getSurveyResponses();
-        
-//         if (result.success) {
-//            setData((result.data as unknown) as SurveyResponse[]);
-//         } else {
-//            console.error('Error fetching surveys:', result.error);
-//         }
-
-//       } catch (err) {
-//         console.error('Error fetching surveys:', err);
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
-
-//     fetchSurveys();
-//   }, []);
-
-//   const formatDate = (dateString: string) => {
-//     return new Date(dateString).toLocaleString('th-TH', {
-//       year: 'numeric',
-//       month: 'long',
-//       day: 'numeric',
-//       hour: '2-digit',
-//       minute: '2-digit',
-//     });
-//   };
-
-//   const renderStars = (rating: number) => {
-//     return (
-//       <div className="flex text-yellow-400">
-//         {[...Array(5)].map((_, i) => (
-//           <Star 
-//             key={i} 
-//             className={`w-4 h-4 ${i < rating ? 'fill-current' : 'text-gray-300'}`} 
-//           />
-//         ))}
-//         <span className="ml-2 text-gray-600 text-xs pt-0.5">({rating}/5)</span>
-//       </div>
-//     );
-//   };
-
-//   return (
-//     <div className="space-y-6">
-//       <div className="flex items-center space-x-4">
-//         <button 
-//           onClick={onBack}
-//           className="p-2 hover:bg-gray-100 rounded-full transition-colors flex items-center gap-2 text-gray-600"
-//         >
-//           <ArrowLeft className="w-5 h-5" />
-//           <span>ย้อนกลับ</span>
-//         </button>
-//         <h2 className="text-2xl font-bold text-gray-800">ผลสำรวจความพึงพอใจ (Survey Results)</h2>
-//       </div>
-
-//       <Card>
-//         <CardContent className="p-0 overflow-hidden">
-//           <div className="overflow-x-auto">
-//             <table className="w-full text-sm text-left">
-//               <thead className="text-xs text-gray-700 uppercase bg-gray-50 border-b">
-//                 <tr>
-//                   <th className="px-6 py-4 w-[200px]">วันที่/เวลา</th>
-//                   {/* เปลี่ยนหัวตารางจาก User ID เป็น ผู้ใช้งาน */}
-//                   <th className="px-6 py-4 w-[250px]">ผู้ใช้งาน</th>
-//                   <th className="px-6 py-4 w-[180px]">ความพึงพอใจ</th>
-//                   <th className="px-6 py-4">ความคิดเห็น</th>
-//                 </tr>
-//               </thead>
-//               <tbody className="divide-y divide-gray-100">
-//                 {loading ? (
-//                   <tr><td colSpan={4} className="px-6 py-8 text-center text-gray-500">กำลังโหลดข้อมูล...</td></tr>
-//                 ) : data.length === 0 ? (
-//                   <tr><td colSpan={4} className="px-6 py-8 text-center text-gray-500">ไม่พบข้อมูลผลสำรวจ</td></tr>
-//                 ) : (
-//                   data.map((item, index) => (
-//                     <tr key={item.id || index} className="bg-white hover:bg-gray-50 transition-colors">
-//                       {/* วันที่ */}
-//                       <td className="px-6 py-4 text-gray-500 whitespace-nowrap align-top">
-//                         <div className="flex items-center gap-2">
-//                           <Calendar className="w-4 h-4 text-gray-400" />
-//                           {formatDate(item.created_at)}
-//                         </div>
-//                       </td>
-
-//                       {/* ✅ แสดงชื่อผู้ใช้ และ อีเมล */}
-//                       <td className="px-6 py-4 align-top">
-//                           <div className="flex flex-col">
-//                              <div className="flex items-center gap-2 text-gray-800 font-semibold text-sm">
-//                                 <User className="w-4 h-4 text-blue-500" />
-//                                 {/* แสดงชื่อ Display Name ถ้าไม่มีให้แสดง ID บางส่วน */}
-//                                 <span>
-//                                     {item.profiles?.display_name || item.user_id.substring(0,8) + '...'}
-//                                 </span>
-//                              </div>
-                             
-//                              {/* แสดงอีเมลตัวเล็กๆ ด้านล่าง */}
-//                              {item.profiles?.email && (
-//                                 <div className="flex items-center gap-1.5 mt-1 ml-0.5 text-gray-400 text-xs">
-//                                    <Mail className="w-3 h-3" />
-//                                    <span>{item.profiles.email}</span>
-//                                 </div>
-//                              )}
-//                           </div>
-//                       </td>
-
-//                       {/* Rating */}
-//                       <td className="px-6 py-4 align-top">
-//                         {renderStars(item.rating)}
-//                       </td>
-
-//                       {/* Comment */}
-//                       <td className="px-6 py-4 text-gray-600 align-top">
-//                         <div className="flex gap-2">
-//                             <MessageSquare className="w-4 h-4 text-gray-400 mt-1 flex-shrink-0" />
-//                             <p className="text-sm leading-relaxed">
-//                                 {item.comment ? item.comment : <span className="text-gray-400 italic">- ไม่มีความคิดเห็น -</span>}
-//                             </p>
-//                         </div>
-//                       </td>
-//                     </tr>
-//                   ))
-//                 )}
-//               </tbody>
-//             </table>
-//           </div>
-//         </CardContent>
-//       </Card>
+//         </DialogContent>
+//       </Dialog>
 //     </div>
 //   );
 // }
@@ -471,192 +294,295 @@
 
 
 
-
-import { useState, useEffect } from 'react';
-// ✅ เรียกใช้ AdminService
-import { AdminService } from '@/services/AdminService'; 
-// ✅ เพิ่ม Trash2 (รูปถังขยะ) เข้ามา
-import { ArrowLeft, Calendar, Star, MessageSquare, User, Mail, Trash2 } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-
-interface SurveyResponse {
-  id: string;
-  user_id: string;
-  rating: number;
-  comment: string;
-  created_at: string;
-  profiles?: {
-    display_name?: string;
-    email?: string;
-  };
-}
+import { useState, useMemo, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client'; 
+import { 
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
+} from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { 
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription 
+} from "@/components/ui/dialog";
+import { Star, Eye, User, Calendar, MessageSquare, ArrowLeft, Loader2 } from "lucide-react";
 
 interface SurveyResultsProps {
-  onBack: () => void;
+  onBack?: () => void;
 }
 
-export default function SurveyResults({ onBack }: SurveyResultsProps) {
-  const [data, setData] = useState<SurveyResponse[]>([]);
-  const [loading, setLoading] = useState(true);
+interface SurveySubmission {
+  id: string;
+  created_at: string;
+  user_email: string;
+  user_name: string;
+  rating: number; 
+  comment: string | null;
+}
 
-  useEffect(() => {
-    fetchSurveys();
-  }, []);
+interface UserSummary {
+  email: string;
+  name: string;
+  totalSubmissions: number;
+  averageRating: number;
+  lastSubmission: string;
+  history: SurveySubmission[];
+}
+
+const StarRating = ({ rating }: { rating: number }) => {
+  return (
+    <div className="flex items-center gap-1">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <Star
+          key={star}
+          className={`w-4 h-4 ${
+            star <= Math.round(rating) 
+              ? "fill-yellow-400 text-yellow-400" 
+              : "text-gray-300"
+          }`}
+        />
+      ))}
+      <span className="text-sm text-gray-600 ml-1">({rating.toFixed(1)})</span>
+    </div>
+  );
+};
+
+export default function SurveyResults({ onBack }: SurveyResultsProps) {
+  
+  const [rawData, setRawData] = useState<SurveySubmission[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedUser, setSelectedUser] = useState<UserSummary | null>(null);
 
   const fetchSurveys = async () => {
     try {
       setLoading(true);
-      const result = await AdminService.getSurveyResponses();
-      if (result.success) {
-           setData((result.data as unknown) as SurveyResponse[]);
-      } else {
-           console.error('Error fetching surveys:', result.error);
+      
+      // ✅ แก้ไข: ขอ display_name แทน first_name ที่ไม่มีอยู่จริง
+      const { data, error } = await supabase
+        .from('survey_responses')
+        .select(`
+          id,
+          created_at,
+          rating,
+          comment,
+          user_id,
+          profiles (
+            email,
+            display_name
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error("Error fetching surveys:", error);
+        return;
       }
-    } catch (err) {
-      console.error('Error fetching surveys:', err);
+
+      if (data) {
+        const formattedData: SurveySubmission[] = data.map((item: any) => ({
+          id: item.id,
+          created_at: item.created_at,
+          rating: item.rating,
+          comment: item.comment,
+          user_email: item.profiles?.email || 'Unknown Email', 
+          // ✅ แก้ไข: ใช้ display_name ในการแสดงผล
+          user_name: item.profiles?.display_name || item.profiles?.email || 'Unknown User'
+        }));
+        
+        setRawData(formattedData);
+      }
+    } catch (error) {
+      console.error("Unexpected error:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ ฟังก์ชันสำหรับลบข้อมูล
-  const handleDelete = async (id: string) => {
-    // 1. ถามยืนยัน
-    if (!window.confirm("คุณแน่ใจหรือไม่ที่จะลบความคิดเห็นนี้?")) return;
+  useEffect(() => {
+    fetchSurveys();
+  }, []);
 
-    try {
-      // 2. เรียกใช้ Service เพื่อสั่งลบ
-      const result = await AdminService.deleteSurveyResponse(id);
-      
-      if (result.success) {
-        // 3. ลบสำเร็จ -> อัปเดตหน้าจอโดยเอาตัวนั้นออกทันที
-        setData(prev => prev.filter(item => item.id !== id));
-        alert("ลบข้อมูลเรียบร้อยแล้ว");
-      } else {
-        alert("เกิดข้อผิดพลาดในการลบข้อมูล: " + result.error);
+  const groupedData = useMemo(() => {
+    const map = new Map<string, UserSummary>();
+
+    rawData.forEach((item) => {
+      if (!map.has(item.user_email)) {
+        map.set(item.user_email, {
+          email: item.user_email,
+          name: item.user_name,
+          totalSubmissions: 0,
+          averageRating: 0, 
+          lastSubmission: item.created_at,
+          history: []
+        });
       }
-    } catch (error) {
-      console.error("Delete error:", error);
-      alert("เกิดข้อผิดพลาดในการลบข้อมูล");
-    }
-  };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('th-TH', {
-      year: 'numeric', month: 'long', day: 'numeric',
-      hour: '2-digit', minute: '2-digit',
+      const user = map.get(item.user_email)!;
+      user.history.push(item);
+      user.totalSubmissions += 1;
+      
+      if (new Date(item.created_at) > new Date(user.lastSubmission)) {
+        user.lastSubmission = item.created_at;
+      }
     });
-  };
 
-  const renderStars = (rating: number) => {
-    return (
-      <div className="flex text-yellow-400">
-        {[...Array(5)].map((_, i) => (
-          <Star 
-            key={i} 
-            className={`w-4 h-4 ${i < rating ? 'fill-current' : 'text-gray-300'}`} 
-          />
-        ))}
-        <span className="ml-2 text-gray-600 text-xs pt-0.5">({rating}/5)</span>
-      </div>
-    );
-  };
+    return Array.from(map.values()).map(user => {
+      const totalScore = user.history.reduce((sum, curr) => sum + curr.rating, 0);
+      user.averageRating = totalScore / user.totalSubmissions;
+      user.history.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      return user;
+    });
+  }, [rawData]);
+
+  const systemAverage = groupedData.length > 0 
+    ? groupedData.reduce((sum, user) => sum + user.averageRating, 0) / groupedData.length 
+    : 0;
+
+  if (loading) {
+      return <div className="flex justify-center p-10"><Loader2 className="animate-spin text-primary" /></div>;
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center space-x-4">
-        <button 
-          onClick={onBack}
-          className="p-2 hover:bg-gray-100 rounded-full transition-colors flex items-center gap-2 text-gray-600"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          <span>ย้อนกลับ</span>
-        </button>
-        <h2 className="text-2xl font-bold text-gray-800">ผลสำรวจความพึงพอใจ (Survey Results)</h2>
+      
+      <div className="flex items-center gap-4">
+        {onBack && (
+            <Button variant="outline" size="icon" onClick={onBack}>
+                <ArrowLeft className="w-4 h-4" />
+            </Button>
+        )}
+        <h1 className="text-2xl font-bold text-gray-800">สรุปผลความพึงพอใจ (Survey Summary)</h1>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-gray-500">ความพึงพอใจเฉลี่ย (ทั้งระบบ)</CardTitle>
+          </CardHeader>
+          <CardContent>
+             <div className="text-2xl font-bold flex items-center gap-2">
+                {systemAverage.toFixed(2)} / 5.0
+                <Star className="text-yellow-400 fill-yellow-400 w-6 h-6" />
+             </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-gray-500">จำนวนผู้ทำแบบสำรวจ</CardTitle>
+          </CardHeader>
+          <CardContent>
+             <div className="text-2xl font-bold">{groupedData.length} คน</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-gray-500">จำนวนครั้งที่ส่งทั้งหมด</CardTitle>
+          </CardHeader>
+          <CardContent>
+             <div className="text-2xl font-bold">{rawData.length} ครั้ง</div>
+          </CardContent>
+        </Card>
       </div>
 
       <Card>
-        <CardContent className="p-0 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="text-xs text-gray-700 uppercase bg-gray-50 border-b">
-                <tr>
-                  <th className="px-6 py-4 w-[200px]">วันที่/เวลา</th>
-                  <th className="px-6 py-4 w-[250px]">ผู้ใช้งาน</th>
-                  <th className="px-6 py-4 w-[180px]">ความพึงพอใจ</th>
-                  <th className="px-6 py-4">ความคิดเห็น</th>
-                  {/* ✅ เพิ่มหัวตาราง "จัดการ" ตรงนี้ */}
-                  <th className="px-6 py-4 w-[100px] text-center">จัดการ</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {loading ? (
-                  <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-500">กำลังโหลดข้อมูล...</td></tr>
-                ) : data.length === 0 ? (
-                  <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-500">ไม่พบข้อมูลผลสำรวจ</td></tr>
-                ) : (
-                  data.map((item, index) => (
-                    <tr key={item.id || index} className="bg-white hover:bg-gray-50 transition-colors">
-                      {/* วันที่ */}
-                      <td className="px-6 py-4 text-gray-500 whitespace-nowrap align-top">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-gray-400" />
-                          {formatDate(item.created_at)}
-                        </div>
-                      </td>
-
-                      {/* ผู้ใช้งาน */}
-                      <td className="px-6 py-4 align-top">
-                          <div className="flex flex-col">
-                             <div className="flex items-center gap-2 text-gray-800 font-semibold text-sm">
-                                <User className="w-4 h-4 text-blue-500" />
-                                <span>
-                                    {item.profiles?.display_name || item.user_id.substring(0,8) + '...'}
-                                </span>
-                             </div>
-                             
-                             {item.profiles?.email && (
-                                <div className="flex items-center gap-1.5 mt-1 ml-0.5 text-gray-400 text-xs">
-                                   <Mail className="w-3 h-3" />
-                                   <span>{item.profiles.email}</span>
-                                </div>
-                             )}
-                          </div>
-                      </td>
-
-                      {/* Rating */}
-                      <td className="px-6 py-4 align-top">
-                        {renderStars(item.rating)}
-                      </td>
-
-                      {/* Comment */}
-                      <td className="px-6 py-4 text-gray-600 align-top">
-                        <div className="flex gap-2">
-                            <MessageSquare className="w-4 h-4 text-gray-400 mt-1 flex-shrink-0" />
-                            <p className="text-sm leading-relaxed">
-                                {item.comment ? item.comment : <span className="text-gray-400 italic">- ไม่มีความคิดเห็น -</span>}
-                            </p>
-                        </div>
-                      </td>
-
-                      {/* ✅ ปุ่มลบ (Trash Icon) */}
-                      <td className="px-6 py-4 align-top text-center">
-                        <button
-                          onClick={() => handleDelete(item.id)}
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-full transition-colors"
-                          title="ลบข้อมูล"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+        <CardHeader>
+          <CardTitle>รายชื่อผู้ใช้งานและการประเมิน</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>ผู้ใช้งาน</TableHead>
+                <TableHead className="text-center">จำนวนครั้งที่ทำ</TableHead>
+                <TableHead>ความพึงพอใจเฉลี่ย</TableHead>
+                <TableHead>ส่งล่าสุดเมื่อ</TableHead>
+                <TableHead className="text-right">จัดการ</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {groupedData.length > 0 ? (
+                groupedData.map((user) => (
+                  <TableRow key={user.email}>
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <span className="font-medium flex items-center gap-2">
+                          <User className="w-4 h-4" /> {user.name}
+                        </span>
+                        <span className="text-xs text-gray-500 ml-6">{user.email}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {user.totalSubmissions} ครั้ง
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <StarRating rating={user.averageRating} />
+                    </TableCell>
+                    <TableCell className="text-sm text-gray-500">
+                      {new Date(user.lastSubmission).toLocaleDateString('th-TH', {
+                          day: 'numeric', month: 'short', year: '2-digit', hour: '2-digit', minute:'2-digit'
+                      })}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => setSelectedUser(user)}
+                          className="gap-2 text-blue-600 hover:text-blue-700"
+                      >
+                          <Eye className="w-4 h-4" /> ดูประวัติ
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center h-24 text-gray-500">
+                    ไม่พบข้อมูลแบบสำรวจในระบบ
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={!!selectedUser} onOpenChange={(open) => !open && setSelectedUser(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl">
+                <MessageSquare className="w-5 h-5 text-blue-600" />
+                ประวัติการประเมิน: {selectedUser?.name}
+            </DialogTitle>
+            <DialogDescription>
+                อีเมล: {selectedUser?.email} | เฉลี่ย: {selectedUser?.averageRating.toFixed(2)}/5
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="mt-4 space-y-4">
+            {selectedUser?.history.map((record, index) => (
+                <div key={record.id} className="p-4 border rounded-lg bg-gray-50 hover:bg-white transition-colors">
+                    <div className="flex justify-between items-start mb-2">
+                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                            <span className="font-bold text-gray-700">ครั้งที่ {selectedUser.history.length - index}</span>
+                            <span>•</span>
+                            <Calendar className="w-3 h-3" />
+                            {new Date(record.created_at).toLocaleDateString('th-TH', {
+                                day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                            })}
+                        </div>
+                        <StarRating rating={record.rating} />
+                    </div>
+                    
+                    <div className="text-sm text-gray-700 bg-white p-3 rounded border border-gray-100 shadow-sm min-h-[50px]">
+                        <span className="font-semibold text-gray-900">ความเห็น: </span>
+                        {record.comment ? record.comment : ""}
+                    </div>
+                </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

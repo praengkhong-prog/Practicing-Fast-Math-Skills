@@ -320,12 +320,25 @@
 // }
 
 
+// 
+
+
+
+
 import { useState, useEffect } from 'react';
 import { BarChart3, Activity, ChevronRight, Calendar, Loader2, ChevronLeft } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AdminService } from '@/services/AdminService';
 import { supabase } from '@/integrations/supabase/client'; 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+
+const THAI_MONTHS = [
+  "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.",
+  "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."
+];
+
+// ✅ กำหนดปีเริ่มต้นสำหรับกราฟรายปี (2565 / 2022)
+const START_YEAR_FIXED = 2022;
 
 interface SystemStatsData {
   totalUsers: number;
@@ -354,10 +367,7 @@ export default function SystemStats({ onNavigate }: SystemStatsProps) {
   const [loading, setLoading] = useState(true);
   const [totalUsage, setTotalUsage] = useState<number>(0);
 
-  // 1. Filter: รายสัปดาห์ (week), รายเดือน (month), รายปี (year)
   const [filter, setFilter] = useState<'week' | 'month' | 'year'>('month');
-  
-  // 2. Reference Date: วันที่ปัจจุบันที่กำลังดูอยู่
   const [currentDate, setCurrentDate] = useState(new Date());
   
   const [chartData, setChartData] = useState<ChartData[]>([]);
@@ -382,7 +392,6 @@ export default function SystemStats({ onNavigate }: SystemStatsProps) {
     loadStats();
   }, []);
 
-  // ฟังก์ชันเปลี่ยนช่วงเวลา (Previous / Next)
   const handleNavigateDate = (direction: 'prev' | 'next') => {
     const newDate = new Date(currentDate);
     const value = direction === 'next' ? 1 : -1;
@@ -390,10 +399,11 @@ export default function SystemStats({ onNavigate }: SystemStatsProps) {
     if (filter === 'week') {
         newDate.setDate(newDate.getDate() + (value * 7));
     } else if (filter === 'month') {
-        newDate.setMonth(newDate.getMonth() + value);
-    } else if (filter === 'year') {
+        // ✅ รายเดือน: เลื่อนทีละ 1 ปี (เพราะ 1 หน้าจอโชว์ ม.ค.-ธ.ค. ของปีนั้น)
         newDate.setFullYear(newDate.getFullYear() + value);
-    }
+    } 
+    // ✅ รายปี: ไม่ต้องเลื่อน (เพราะโชว์ 2022-ปัจจุบัน ในหน้าเดียว)
+    
     setCurrentDate(newDate);
   };
 
@@ -408,20 +418,19 @@ export default function SystemStats({ onNavigate }: SystemStatsProps) {
 
     if (selectedFilter === 'week') {
         const day = startDate.getDay(); 
-        const diff = startDate.getDate() - day + (day === 0 ? -6 : 1); // เริ่มวันจันทร์
+        const diff = startDate.getDate() - day + (day === 0 ? -6 : 1); 
         startDate.setDate(diff);
         endDate.setDate(startDate.getDate() + 6);
     } else if (selectedFilter === 'month') {
-        startDate.setDate(1);
-        endDate.setMonth(endDate.getMonth() + 1);
-        endDate.setDate(0); 
+        // ✅ รายเดือน: เอาข้อมูลตั้งแต่ 1 ม.ค. - 31 ธ.ค. ของปีที่เลือก
+        startDate.setMonth(0, 1);     // 1 ม.ค.
+        endDate.setMonth(11, 31);     // 31 ธ.ค.
     } else if (selectedFilter === 'year') {
-        startDate.setMonth(0, 1);
-        endDate.setMonth(11, 31);
+        // ✅ รายปี: เอาข้อมูลตั้งแต่ 1 ม.ค. 2022 ถึง ปัจจุบัน
+        startDate.setFullYear(START_YEAR_FIXED, 0, 1); // 1 ม.ค. 2022
+        endDate.setFullYear(new Date().getFullYear(), 11, 31); // 31 ธ.ค. ปีปัจจุบัน
     }
 
-    // 3. ดึงข้อมูลจาก Supabase
-    // ✅ แก้ไข: เปลี่ยน .select('created_at, status') เป็น .select('*') เพื่อแก้ Error Type
     const { data, error } = await supabase
       .from('practice_results')
       .select('*') 
@@ -431,14 +440,12 @@ export default function SystemStats({ onNavigate }: SystemStatsProps) {
 
     if (error || !data) return;
 
-    // 4. สร้าง Skeleton
     const chartSkeleton: ChartData[] = [];
-    const loopDate = new Date(startDate);
-
+    
     const getDateKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    const getMonthKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-
-    if (selectedFilter === 'week' || selectedFilter === 'month') {
+    
+    if (selectedFilter === 'week') {
+        const loopDate = new Date(startDate);
         while (loopDate <= endDate) {
             chartSkeleton.push({
                 key: getDateKey(loopDate),
@@ -448,28 +455,42 @@ export default function SystemStats({ onNavigate }: SystemStatsProps) {
             });
             loopDate.setDate(loopDate.getDate() + 1);
         }
-    } else if (selectedFilter === 'year') {
+    } else if (selectedFilter === 'month') {
+        // ✅ รายเดือน: สร้าง Skeleton 12 เดือน (ม.ค. - ธ.ค.)
         for (let i = 0; i < 12; i++) {
-            const d = new Date(startDate.getFullYear(), i, 1);
             chartSkeleton.push({
-                key: getMonthKey(d),
-                name: d.toLocaleDateString('th-TH', { month: 'short', year: '2-digit' }),
-                fullDate: `${d.getMonth()}-${d.getFullYear()}`,
+                key: `${i}`, // key คือ index เดือน 0-11
+                name: THAI_MONTHS[i], 
+                fullDate: `${THAI_MONTHS[i]} ${refDate.getFullYear() + 543}`,
+                completed: 0, incomplete: 0, total: 0 
+            });
+        }
+    } else if (selectedFilter === 'year') {
+        // ✅ รายปี: สร้าง Skeleton ตามปี พ.ศ. (2565 - ปัจจุบัน)
+        const currentYear = new Date().getFullYear();
+        for (let y = START_YEAR_FIXED; y <= currentYear; y++) {
+             chartSkeleton.push({
+                key: `${y}`, // key คือปี ค.ศ.
+                name: `ปี ${y + 543}`, // แสดงปี พ.ศ.
+                fullDate: `ปี พ.ศ. ${y + 543}`,
                 completed: 0, incomplete: 0, total: 0 
             });
         }
     }
 
-    // 5. Map ข้อมูลจริงใส่กราฟ
-    // ✅ แก้ไข: ใช้ (data as any[]) เพื่อ bypass การเช็ค Type ของ column status
+    // Map ข้อมูลจริงใส่กราฟ
     (data as any[]).forEach((item) => {
         const itemDate = new Date(item.created_at);
         let itemKey = '';
 
-        if (selectedFilter === 'week' || selectedFilter === 'month') {
+        if (selectedFilter === 'week') {
             itemKey = getDateKey(itemDate);
+        } else if (selectedFilter === 'month') {
+            // key คือ index เดือน (0-11)
+            itemKey = `${itemDate.getMonth()}`;
         } else if (selectedFilter === 'year') {
-            itemKey = getMonthKey(itemDate);
+            // key คือ ปี ค.ศ.
+            itemKey = `${itemDate.getFullYear()}`;
         }
 
         const found = chartSkeleton.find(x => x.key === itemKey);
@@ -497,22 +518,20 @@ export default function SystemStats({ onNavigate }: SystemStatsProps) {
         end.setDate(start.getDate() + 6);
         return `${start.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })} - ${end.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })}`;
     } else if (filter === 'month') {
-        return currentDate.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
+        // ✅ รายเดือน: แสดงปี พ.ศ. ของข้อมูลชุดนั้น
+        return `ประจำปี พ.ศ. ${currentDate.getFullYear() + 543}`;
     } else if (filter === 'year') {
-        return `ปี พ.ศ. ${currentDate.getFullYear() + 543}`;
+        // ✅ รายปี: แสดงช่วงปี 2565 - ปัจจุบัน
+        return `ปี พ.ศ. ${START_YEAR_FIXED + 543} - ปัจจุบัน`;
     }
     return '';
   };
 
   const getChartWidth = () => {
-      if (filter === 'month') {
-          // ขยายความกว้างขั้นต่ำเป็น 1200px หรือคำนวณจากจำนวนวัน x 70px (เดิม 40)
-          return Math.max(1500, chartData.length * 90); 
-      }
-      if (filter === 'year') {
-          // ขยายหน่อยเผื่อหน้าจอเล็ก
-          return Math.max(800, chartData.length * 50);
-      }
+      // ปรับความกว้างกราฟ
+      if (filter === 'week') return '100%';
+      if (filter === 'month') return Math.max(800, chartData.length * 50); // กว้างพอสมควรสำหรับ 12 เดือน
+      if (filter === 'year') return '100%'; // ปีมีไม่กี่แท่ง ให้เต็มจอ
       return '100%';
   };
 
@@ -522,7 +541,6 @@ export default function SystemStats({ onNavigate }: SystemStatsProps) {
     <div className="space-y-6">
       {/* Cards Section */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {/* Card: Total Usage */}
         <Card 
             className="hover:shadow-lg transition-all border-l-4 border-l-blue-500 bg-gradient-to-br from-white to-blue-50 cursor-pointer"
             onClick={() => onNavigate && onNavigate('practice_history')}
@@ -544,7 +562,6 @@ export default function SystemStats({ onNavigate }: SystemStatsProps) {
           </CardContent>
         </Card>
 
-        {/* Card: Surveys */}
         <Card 
             className="hover:shadow-lg transition-all cursor-pointer border-l-4 border-l-orange-500 bg-gradient-to-br from-white to-orange-50"
             onClick={() => onNavigate && onNavigate('surveys')}
@@ -578,29 +595,35 @@ export default function SystemStats({ onNavigate }: SystemStatsProps) {
                 <p className="text-sm text-gray-500 hidden md:block">แสดงจำนวนการเล่นเกม สำเร็จ vs ไม่สำเร็จ</p>
             </div>
             
-            {/* Controls Container */}
             <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
                 
-                {/* 1. ปุ่มเลื่อนวันที่ (Prev/Next) */}
+                {/* Date Navigator */}
                 <div className="flex items-center bg-white border rounded-md shadow-sm">
-                    <button 
-                        onClick={() => handleNavigateDate('prev')}
-                        className="p-1.5 hover:bg-gray-100 text-gray-600 rounded-l-md"
-                    >
-                        <ChevronLeft className="w-5 h-5" />
-                    </button>
-                    <span className="px-3 text-sm font-semibold text-gray-700 min-w-[160px] text-center select-none">
+                    {/* ซ่อนปุ่มลูกศร ถ้าเป็นโหมดรายปี (เพราะโชว์หมดแล้ว) */}
+                    {filter !== 'year' && (
+                        <button 
+                            onClick={() => handleNavigateDate('prev')}
+                            className="p-1.5 hover:bg-gray-100 text-gray-600 rounded-l-md"
+                        >
+                            <ChevronLeft className="w-5 h-5" />
+                        </button>
+                    )}
+                    
+                    <span className="px-3 text-sm font-semibold text-gray-700 min-w-[180px] text-center select-none">
                         {getDateRangeLabel()}
                     </span>
-                    <button 
-                        onClick={() => handleNavigateDate('next')}
-                        className="p-1.5 hover:bg-gray-100 text-gray-600 rounded-r-md"
-                    >
-                        <ChevronRight className="w-5 h-5" />
-                    </button>
+
+                    {filter !== 'year' && (
+                        <button 
+                            onClick={() => handleNavigateDate('next')}
+                            className="p-1.5 hover:bg-gray-100 text-gray-600 rounded-r-md"
+                        >
+                            <ChevronRight className="w-5 h-5" />
+                        </button>
+                    )}
                 </div>
 
-                {/* 2. Filter Buttons */}
+                {/* Filter Buttons */}
                 <div className="flex bg-gray-100 p-1 rounded-md">
                     <button 
                         onClick={() => setFilter('week')}
@@ -625,7 +648,6 @@ export default function SystemStats({ onNavigate }: SystemStatsProps) {
         </CardHeader>
         
         <CardContent>
-            {/* Wrapper สำหรับ Scrollbar */}
             <div className="w-full overflow-x-auto pb-4">
                 <div style={{ height: 350, width: getChartWidth(), minWidth: '100%' }}>
                     {chartData.length > 0 ? (
@@ -660,7 +682,7 @@ export default function SystemStats({ onNavigate }: SystemStatsProps) {
                                     fill="#22c55e" 
                                     name="ทำเสร็จ (Completed)" 
                                     radius={[0, 0, 4, 4]} 
-                                    barSize={filter === 'month' ? 20 : 40} 
+                                    barSize={filter === 'week' ? 40 : 20} 
                                 />
                                 <Bar 
                                     dataKey="incomplete" 
@@ -668,7 +690,7 @@ export default function SystemStats({ onNavigate }: SystemStatsProps) {
                                     fill="#eab308" 
                                     name="ทำไม่เสร็จ (Incomplete)" 
                                     radius={[0, 0, 0, 0]} 
-                                    barSize={filter === 'month' ? 20 : 40} 
+                                    barSize={filter === 'week' ? 40 : 20} 
                                 />
                             </BarChart>
                         </ResponsiveContainer>
