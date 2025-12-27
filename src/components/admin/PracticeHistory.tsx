@@ -357,7 +357,7 @@ export default function PracticeHistory({ onBack }: PracticeHistoryProps) {
   const [selectedDate, setSelectedDate] = useState<string>('');
 
   const formatModeName = (modeId: string | null | undefined) => {
-    if (!modeId) return '-';
+    if (!modeId) return 'หมดผสม (Mixed)';
     if (modeId === 'mixed') return 'โหมดผสม (Mixed)';
     return MODE_NAMES[modeId] || `โหมดอื่นๆ`;
   };
